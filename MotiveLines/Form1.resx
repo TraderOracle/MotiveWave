@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <metadata name="colorDialog1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>23, 15</value>
+  </metadata>
+  <data name="rtfTraderSmarts.Text" xml:space="preserve">
+    <value>​TS TradePlan for NQ - Monday February 24, 2025
+Contract: NQ H25 
+TraderSmarts Numbers for NQ:
+23765.25, 22801.00, 22713.00, 22556.75, 22422.00, 22363.25, 22335.00, 22322.00, 22298.25, 22258.50, 22234.00, 22187.50, 22166.00, 22159.00, 22133.75, 22086.25, 22031.75, 22028.75, 22024.25, 21987.25, 21978.75, 21972.75, 21964.50, 21948.00, 21923.75, 21916.50, 21904.75, 21885.75, 21879.50, 21875.50, 21833.75, 21818.75, 21807.25, 21787.75, 21757.25, 21752.00, 21721.00, 21703.50, 21691.00, 21689.75, 21671.00, 21662.50, 21655.00, 21641.50, 21631.00, 21620.50, 21602.00, 21592.50, 21586.25, 21570.50, 21554.75, 21537.75, 21521.50, 21514.75, 21508.25, 21489.75, 21468.75, 21462.50, 21447.25, 21439.25, 21424.00, 21420.00, 21411.25, 21387.75, 21382.00, 21377.00, 21371.25, 21351.75, 21319.25, 21308.25, 21301.75, 21274.25, 21265.00, 21243.50, 21218.25, 21213.00, 21200.00, 21188.75, 21159.75, 21154.75, 21130.75, 21034.25, 20987.25, 20969.75, 20959.25, 20937.75, 20896.25, 20870.25, 20857.50, 20830.50, 20784.50, 20739.25, 20674.25, 20646.75, 20638.50, 20573.75, 20540.50, 20342.00, 20238.00, 20215.50, 20147.50, 20087.25, 19870.25, 19544.25, 19441.75, 19429.25, 19110.25
+
+NQ Contract Notes: 
+
+NQ Macro Technical View: 
+
+NQ Execution/Target Zones:
+22556.75 Extreme Short
+21964.50 - 21948.00 Highest Odds Short FTU
+21916.50 - 21904.75 Range Short
+
+21691.00 - 21689.75 Line in the Sand
+
+21631.00 - 21620.50 Range Long
+21387.75 - 21382.00 Highest Odds Long FTD
+21308.25 - 21301.75 Extreme Long
+
+NQ MTS Numbers: 23426.00, 23225.00, 22569.00, 22176.00, 22123.75, 21925.00, 21317.75, 20827.25, 20458.25, 19722.25
+</value>
+  </data>
+  <data name="rtfKillpips.Text" xml:space="preserve">
+    <value>$NQ1!: vix r1, 22375, vix r2, 22389, vix s1, 21854, vix s2, 21839, 1DexpMAX, 22403, 1DexpMIN, 21827, RD0, 22165, RD1, 22209, RD2, 22305, SD0, 22065, SD1, 22019, SD2, 21921, HV, 22115, VAH, 22459, VAL, 21769, range daily max, 22496, range daily min, 21729   setting 58k - 493k
+
+$ES1!: vix r1, 6187, vix r2, 6190, vix s1, 6083, vix s2, 6080, 1DexpMAX, 6192, 1DexpMIN, 6078, RD0, 6145, RD1, 6154, RD2, 6173, SD0, 6125, SD1, 6116, SD2, 6097, HV, 6135, VAH, 6204, VAL, 6067, range daily max, 6212, range daily min, 6058   setting 153k - 1.3M
+
+$YM1!: vix r1, 45175, vix r2, 45196, vix s1, 44450, vix s2, 44430, 1DexpMAX, 45211, 1DexpMIN, 44415, RD0, 44881, RD1, 44945, RD2, 45076, SD0, 44744, SD1, 44678, SD2, 44547, HV, 44810, VAH, 45292, VAL, 44334, range daily max, 45345, range daily min, 44280   setting 12k - 98k
+</value>
+  </data>
+  <data name="rtfMenthorQ.Text" xml:space="preserve">
+    <value>$NQ1!: Call Resistance, 22000, Put Support, 21500, HVL, 21700, 1D Min, 20866.83, 1D Max, 21431.17, Call Resistance 0DTE, 21510, Put Support 0DTE, 21250, HVL 0DTE, 21650, Gamma Wall 0DTE, 21510, GEX 1, 21000, GEX 2, 21200, GEX 3, 20900, GEX 4, 21100, GEX 5, 21300, GEX 6, 21600, GEX 7, 21550, GEX 8, 21450, GEX 9, 21475, GEX 10, 21625
+
+$ES1!: Call Resistance, 6200, Put Support, 5900, HVL, 6065, 1D Min, 5910.75, 1D Max, 6029.25, Call Resistance 0DTE, 6030, Put Support 0DTE, 5900, HVL 0DTE, 6025, Gamma Wall 0DTE, 6030, GEX 1, 6000, GEX 2, 5950, GEX 3, 5975, GEX 4, 5925, GEX 5, 6020, GEX 6, 6050, GEX 7, 6075, GEX 8, 6070, GEX 9, 6040, GEX 10, 6060</value>
+  </data>
+</root>
