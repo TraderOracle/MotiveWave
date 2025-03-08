@@ -42,6 +42,8 @@
             this.rtfTraderSmarts = new TextBox();
             this.rtfKillpips = new TextBox();
             this.rtfMenthorQ = new TextBox();
+            this.rtfMancini = new TextBox();
+            this.chkMancini = new CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -74,7 +76,9 @@
             // chkTS
             // 
             this.chkTS.AutoSize = true;
-            this.chkTS.Location = new Point(30, 69);
+            this.chkTS.Checked = true;
+            this.chkTS.CheckState = CheckState.Checked;
+            this.chkTS.Location = new Point(32, 69);
             this.chkTS.Name = "chkTS";
             this.chkTS.Size = new Size(168, 24);
             this.chkTS.TabIndex = 3;
@@ -86,7 +90,7 @@
             this.chkKillpips.AutoSize = true;
             this.chkKillpips.Checked = true;
             this.chkKillpips.CheckState = CheckState.Checked;
-            this.chkKillpips.Location = new Point(26, 212);
+            this.chkKillpips.Location = new Point(30, 212);
             this.chkKillpips.Name = "chkKillpips";
             this.chkKillpips.Size = new Size(167, 24);
             this.chkKillpips.TabIndex = 5;
@@ -96,9 +100,7 @@
             // chkMQ
             // 
             this.chkMQ.AutoSize = true;
-            this.chkMQ.Checked = true;
-            this.chkMQ.CheckState = CheckState.Checked;
-            this.chkMQ.Location = new Point(22, 377);
+            this.chkMQ.Location = new Point(30, 553);
             this.chkMQ.Name = "chkMQ";
             this.chkMQ.Size = new Size(148, 24);
             this.chkMQ.TabIndex = 7;
@@ -108,8 +110,6 @@
             // chkTSLines
             // 
             this.chkTSLines.AutoSize = true;
-            this.chkTSLines.Checked = true;
-            this.chkTSLines.CheckState = CheckState.Checked;
             this.chkTSLines.Location = new Point(607, 101);
             this.chkTSLines.Name = "chkTSLines";
             this.chkTSLines.Size = new Size(133, 24);
@@ -149,7 +149,6 @@
             this.rtfTraderSmarts.Size = new Size(564, 91);
             this.rtfTraderSmarts.TabIndex = 17;
             this.rtfTraderSmarts.Text = resources.GetString("rtfTraderSmarts.Text");
-            this.rtfTraderSmarts.TextChanged += this.rtfTraderSmarts_TextChanged;
             // 
             // rtfKillpips
             // 
@@ -163,19 +162,41 @@
             // 
             // rtfMenthorQ
             // 
-            this.rtfMenthorQ.Location = new Point(22, 407);
+            this.rtfMenthorQ.Location = new Point(26, 583);
             this.rtfMenthorQ.Multiline = true;
             this.rtfMenthorQ.Name = "rtfMenthorQ";
             this.rtfMenthorQ.ScrollBars = ScrollBars.Vertical;
-            this.rtfMenthorQ.Size = new Size(564, 149);
+            this.rtfMenthorQ.Size = new Size(564, 114);
             this.rtfMenthorQ.TabIndex = 19;
             this.rtfMenthorQ.Text = resources.GetString("rtfMenthorQ.Text");
+            // 
+            // rtfMancini
+            // 
+            this.rtfMancini.Location = new Point(22, 414);
+            this.rtfMancini.Multiline = true;
+            this.rtfMancini.Name = "rtfMancini";
+            this.rtfMancini.ScrollBars = ScrollBars.Vertical;
+            this.rtfMancini.Size = new Size(564, 114);
+            this.rtfMancini.TabIndex = 21;
+            this.rtfMancini.Text = resources.GetString("rtfMancini.Text");
+            // 
+            // chkMancini
+            // 
+            this.chkMancini.AutoSize = true;
+            this.chkMancini.Location = new Point(30, 384);
+            this.chkMancini.Name = "chkMancini";
+            this.chkMancini.Size = new Size(170, 24);
+            this.chkMancini.TabIndex = 20;
+            this.chkMancini.Text = "Output Mancini Lines";
+            this.chkMancini.UseVisualStyleBackColor = true;
             // 
             // frmMain
             // 
             this.AutoScaleDimensions = new SizeF(8F, 20F);
             this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(810, 580);
+            this.ClientSize = new Size(804, 724);
+            this.Controls.Add(this.rtfMancini);
+            this.Controls.Add(this.chkMancini);
             this.Controls.Add(this.rtfMenthorQ);
             this.Controls.Add(this.rtfKillpips);
             this.Controls.Add(this.rtfTraderSmarts);
@@ -191,8 +212,7 @@
             this.MaximizeBox = false;
             this.Name = "frmMain";
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.Text = "MotiveLines - version 1.0";
-            this.Load += this.frmMain_Load;
+            this.Text = "MotiveLines - version 1.1";
             this.ResumeLayout(false);
             this.PerformLayout();
         }
@@ -212,5 +232,7 @@
         private TextBox rtfTraderSmarts;
         private TextBox rtfKillpips;
         private TextBox rtfMenthorQ;
+        private TextBox rtfMancini;
+        private CheckBox chkMancini;
     }
 }
