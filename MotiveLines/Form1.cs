@@ -31,8 +31,7 @@ namespace MotiveLines
             c = Color.White; // default
             if (sDesc.Contains("RD0") || sDesc.Contains("RD1") || sDesc.Contains("RD2"))
             {
-                bc = Color.FromArgb(255, 91, 201, 201);
-                c = Color.Black;
+                bc = Color.FromArgb(255, 103, 163, 18);
             }
             else if (sDesc.Contains("HV"))
             {
