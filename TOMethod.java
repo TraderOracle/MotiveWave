@@ -55,10 +55,7 @@ public class TOMethod extends Study
     @Override
     public void onLoad(Defaults defaults)
     {
-        hor = new Line();
-        Plot t = new Plot();
-        LineInfo lf = new LineInfo(19680, Color.red, 1.0f, new float[] {3,3});
-        t.addHorizontalLine(lf);
+
     }
 
     @Override
@@ -85,21 +82,17 @@ public class TOMethod extends Study
         grp1.addRow(new InputDescriptor(Inputs.INPUT, get("Input"), Enums.BarInput.CLOSE));
         grp1.addRow(new IntegerDescriptor(Inputs.PERIOD, get("Period"), 20, 1, 9999, 1));
         grp1.addRow(new PathDescriptor(Inputs.PATH, "Line", defaults.getLineColor(), 3.0f, null, true, false, true));
-
-
     }
 
     @Override
     protected void calculate(int index, DataContext ctx) {
-        addFigure(hor);
-
-        hor = new Line();
-
         var series = ctx.getDataSeries();
+
+        //this.addFigure(new Marker(coords, Enums.MarkerType.CIRCLE, Enums.Size.SMALL, Enums.Position.BOTTOM, GREEN, GREEN));
+
         int last = series.size() - 1;
         Object input = getSettings().getInput(Inputs.INPUT);
-        if (series == null) return;
-        if (index < 202) return;
+        if (series == null || index < 202 || !series.isBarComplete(index)) return;
 
         //series.setPriceBarColor(index, Color.white);
         //series.setDouble(index, Values.MA, 19680d);
@@ -129,24 +122,30 @@ public class TOMethod extends Study
         double lowerBB = middleBB - (2 * stdDev);
         //endregion
 
-        if (c0R && high > kama && series.getOpen(index) < kama && phigh < kama)
+        /*
+        if ((c0R && high > kama && open < kama && phigh < kama)) // || (c0G && high > kama && close < kama && phigh < kama))
         {
-            al.add(open);
+            this.addFigure(new Marker(coords, Enums.MarkerType.CIRCLE, Enums.Size.SMALL, Enums.Position.BOTTOM, GREEN, GREEN));
+            //al.add(open);
             //debug("array list = " + al.size());
             series.setPriceBarColor(index, WHITE);
             ctx.signal(index, Signals.BOINK, "BOINK", close);
             return;
         }
 
-        if (c0G && clow < kama && open > kama && plow > kama)
+        if ((c0G && clow < kama && open > kama && plow > kama)) // || (c0R && clow < kama && close > kama && plow > kama))
         {
+            this.addFigure(new Marker(coords, Enums.MarkerType.CIRCLE, Enums.Size.SMALL, Enums.Position.BOTTOM, GREEN, GREEN));
             series.setPriceBarColor(index, WHITE);
             ctx.signal(index, Signals.BOINK, "BOINK", close);
             return;
         }
+        */
 
         if ((clow < lowerBB || plow < lowerBB) && body > pbody && c1R && c0G)
         {
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 2);
+            this.addFigure(new Marker(coords, Enums.MarkerType.CIRCLE, Enums.Size.MEDIUM, Enums.Position.BOTTOM, GREEN, GREEN));
             ctx.signal(index, Signals.ENG_BB, "ENG_BB", close);
             series.setPriceBarColor(index, WHITE);
             return;
@@ -154,6 +153,8 @@ public class TOMethod extends Study
 
         if ((high > upperBB || phigh > upperBB) && body > pbody && c1G && c0R)
         {
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 2);
+            this.addFigure(new Marker(coords, Enums.MarkerType.CIRCLE, Enums.Size.MEDIUM, Enums.Position.TOP, RED, RED));
             ctx.signal(index, Signals.ENG_BB, "ENG_BB", close);
             series.setPriceBarColor(index, WHITE);
             return;
@@ -175,29 +176,4 @@ public class TOMethod extends Study
             series.setComplete(index);
     }
 
-    private class Line extends Figure
-    {
-        Line() {
-        }
-
-        @Override
-        public void layout(DrawContext ctx) {
-            var gb = ctx.getBounds(); // this is the bounds of the graph
-            Point2D pStart = new Point2D.Double(0d, 19680d);
-            Point2D pEnd = new Point2D.Double(1000d, 19680d);
-            line = new Line2D.Double(pStart, pEnd);
-        }
-
-        @Override
-        public void draw(Graphics2D gc, DrawContext ctx) {
-            var path = getSettings().getPath(Inputs.PATH);
-            gc.setStroke(path.getStroke());
-            gc.setColor(path.getColor());
-            gc.draw(line);
-        }
-
-        private Line2D line;
-    }
-
-    private Line hor;
 }
