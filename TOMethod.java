@@ -177,13 +177,13 @@ public class TOMethod extends Study
         // =-=-=-=-=   ENGULFING HIGH   =-=-=-=-=
         if ((high > upperBB || phigh > upperBB) && body > pbody && c1G && c0R)
         {
-            /*
             int iStart = series.getStartIndex();
             int iEnd = series.getEndIndex();
             Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 2);
             Coordinate coordsEnd = new Coordinate(series.getStartTime(index-100), (double) series.getHigh(index) + 2.2);
             this.addFigure(new Marker(coords, Enums.MarkerType.CIRCLE, Enums.Size.MEDIUM, Enums.Position.TOP, RED, RED));
 
+            /*
             Box bx = new Box(coords, coordsEnd);
             bx.setFillColor(RED);
             bx.setLineColor(WHITE);
@@ -215,11 +215,9 @@ public class TOMethod extends Study
             {
                 line.setEnd(series.getStartTime(index), line.getEndValue());
                 line.setExtendRightBounds(false);
+                line.setExtendRight(0);
                 this.addFigure(line);
                 break;
-                // setEnd(long time, double value) Sets the location of the end of the line.
-                // double getEndValue() - Gets the value of the ending location of the line.
-
             }
             //al.remove(item);
         }
