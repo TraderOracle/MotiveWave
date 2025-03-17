@@ -140,6 +140,7 @@ public class TOMethod extends Study
             // PathInfo(Color c, float width, float[] dash, boolean enabled, boolean continuous, boolean showBars, int barCenter, Integer fixedWidth)
             PathInfo pf = new PathInfo(new Color(126, 179, 252), 2, new float[] {4,1,3}, true, true, false, 0, 2);
             Line lk = new Line(coords, coordsEnd, pf);
+            lk.setExtendRightBounds(true);
             // lk.setText(Math.abs(open), new Font("Arial", Font.PLAIN, 12));
             if (!al.contains(lk))
                 al.add(lk);
@@ -156,6 +157,7 @@ public class TOMethod extends Study
             // PathInfo(Color c, float width, float[] dash, boolean enabled, boolean continuous, boolean showBars, int barCenter, Integer fixedWidth)
             PathInfo pf = new PathInfo(new Color(126, 179, 252), 2, new float[] {4,1,3}, true, true, false, 0, 2);
             Line lk = new Line(coords, coordsEnd, pf);
+            lk.setExtendRightBounds(true);
             // lk.setText(Math.abs(open), new Font("Arial", Font.PLAIN, 12));
             if (!al.contains(lk))
                 al.add(lk);
@@ -212,6 +214,7 @@ public class TOMethod extends Study
             if (idxLine > index && (bGStop || bRStop || bG1Stop || bR1Stop || bG2Stop))
             {
                 line.setEnd(series.getStartTime(index), line.getEndValue());
+                line.setExtendRightBounds(false);
                 this.addFigure(line);
                 break;
                 // setEnd(long time, double value) Sets the location of the end of the line.
