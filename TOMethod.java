@@ -71,14 +71,18 @@ public class TOMethod extends Study
         double open =  series.getOpen(index);
         double pclose = series.getClose(index - 1);
         double popen =  series.getOpen(index - 1);
+        double ppclose = series.getClose(index - 2);
+        double ppopen =  series.getOpen(index - 2);
         double clow = series.getLow(index);
         double plow = series.getLow(index - 1);
         double high = series.getHigh(index);
         double phigh = series.getHigh(index - 1);
         boolean c0G = close > series.getOpen(index);
         boolean c1G = series.getClose(index - 1) > series.getOpen(index - 1);
+        boolean c2G = series.getClose(index - 2) > series.getOpen(index - 2);
         boolean c0R = close < open;
         boolean c1R = series.getClose(index - 1) < series.getOpen(index - 1);
+        boolean c2R = series.getClose(index - 2) < series.getOpen(index - 2);
         double body = Math.abs(open - close);
         double pbody = Math.abs(series.getOpen(index - 1) - series.getClose(index - 1));
         double kama = series.kama(index, 9, input);
@@ -108,7 +112,8 @@ public class TOMethod extends Study
         // =-=-=-=-=   BOINK GREEN   =-=-=-=-=
         if ( (c0G && c1R && clow < kama && close > kama && phigh > high) ||
              (c0G && bGDoji && clow < kama && close > kama && phigh < kama) ||
-             (c0G && bRDoji && clow < kama && close > kama && plow <= clow))
+             (c0G && bRDoji && clow < kama && close > kama && plow <= clow) ||
+             (c0G && c1G && c2G && open <= pclose && popen <= ppclose && clow < kama && close > kama))
         {
             Coordinate coords = new Coordinate(series.getStartTime(index), (double) clow-1);
             this.addFigure(new Marker(coords, Enums.MarkerType.TRIANGLE,
