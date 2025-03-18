@@ -37,28 +37,9 @@ public class TOMethod extends Study
     private static final Color YELLOW = new Color(255, 0, 0);
     private List<Line> al = new ArrayList<>();
 
-    public String getHTML(String urlToRead) throws Exception {
-        StringBuilder result = new StringBuilder();
-        URL url = new URL(urlToRead);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(conn.getInputStream()))) {
-            for (String line; (line = reader.readLine()) != null; ) {
-                result.append(line);
-            }
-        }
-        return result.toString();
-    }
-
     @Override
     public void initialize(Defaults defaults)
     {
-        try {
-            String returns = getHTML("https://raw.githubusercontent.com/TraderOracle/NinjaTrader/refs/heads/main/Default.xml");
-            //debug(returns);
-        } catch(Exception e) {        }
-
         var sd=createSD();
         var tab=sd.addTab("General");
         var grp=tab.addGroup("");
@@ -102,6 +83,9 @@ public class TOMethod extends Study
         double pbody = Math.abs(series.getOpen(index - 1) - series.getClose(index - 1));
         double kama = series.kama(index, 9, input);
         double ema200 = series.ema(index, 200, input);
+        boolean bGDoji = c1G && pbody < phigh - pclose && pbody < popen - plow;
+        boolean bRDoji = c1R && pbody < phigh - popen && pbody < pclose - plow;
+        boolean bDoji = bGDoji || bRDoji;
 
         // Calculate Bollinger Bands
         double middleBB = series.sma(index , 20, input);
@@ -110,25 +94,29 @@ public class TOMethod extends Study
         double lowerBB = middleBB - (2 * stdDev);
         //endregion
 
-        /*
-        if ((c0R && high > kama && open < kama && phigh < kama)) // || (c0G && high > kama && close < kama && phigh < kama))
+        // =-=-=-=-=   BOINK RED   =-=-=-=-=
+        if ((c0R && c1G && high > kama && close < kama && phigh < high))
         {
-            this.addFigure(new Marker(coords, Enums.MarkerType.CIRCLE, Enums.Size.SMALL, Enums.Position.BOTTOM, GREEN, GREEN));
-            //al.add(open);
-            //debug("array list = " + al.size());
-            series.setPriceBarColor(index, WHITE);
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) high+1);
+            this.addFigure(new Marker(coords, Enums.MarkerType.TRIANGLE,
+                 Enums.Size.SMALL, Enums.Position.TOP, RED, RED));
+            //series.setPriceBarColor(index, WHITE);
             ctx.signal(index, Signals.BOINK, "BOINK", close);
             return;
         }
 
-        if ((c0G && clow < kama && open > kama && plow > kama)) // || (c0R && clow < kama && close > kama && plow > kama))
+        // =-=-=-=-=   BOINK GREEN   =-=-=-=-=
+        if ( (c0G && c1R && clow < kama && close > kama && phigh > high) ||
+             (c0G && bGDoji && clow < kama && close > kama && phigh < kama) ||
+             (c0G && bRDoji && clow < kama && close > kama && plow <= clow))
         {
-            this.addFigure(new Marker(coords, Enums.MarkerType.CIRCLE, Enums.Size.SMALL, Enums.Position.BOTTOM, GREEN, GREEN));
-            series.setPriceBarColor(index, WHITE);
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) clow-1);
+            this.addFigure(new Marker(coords, Enums.MarkerType.TRIANGLE,
+                 Enums.Size.SMALL, Enums.Position.BOTTOM, GREEN, GREEN));
+            //series.setPriceBarColor(index, WHITE);
             ctx.signal(index, Signals.BOINK, "BOINK", close);
             return;
         }
-        */
 
         // =-=-=-=-=   VOLUME IMBALANCES GREEN   =-=-=-=-=
         if (c0G && c1G && open > pclose)
@@ -144,7 +132,7 @@ public class TOMethod extends Study
             // lk.setText(Math.abs(open), new Font("Arial", Font.PLAIN, 12));
             if (!al.contains(lk))
                 al.add(lk);
-            this.addFigure(lk);
+            //this.addFigure(lk);
         }
 
         // =-=-=-=-=   VOLUME IMBALANCES RED   =-=-=-=-=
@@ -161,7 +149,7 @@ public class TOMethod extends Study
             // lk.setText(Math.abs(open), new Font("Arial", Font.PLAIN, 12));
             if (!al.contains(lk))
                 al.add(lk);
-            this.addFigure(lk);
+            //this.addFigure(lk);
         }
 
         // =-=-=-=-=   ENGULFING LOW   =-=-=-=-=
@@ -216,7 +204,7 @@ public class TOMethod extends Study
                 line.setEnd(series.getStartTime(index), line.getEndValue());
                 line.setExtendRightBounds(false);
                 line.setExtendRight(0);
-                this.addFigure(line);
+                //this.addFigure(line);
                 break;
             }
             //al.remove(item);
