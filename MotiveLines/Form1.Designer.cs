@@ -30,7 +30,6 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMain));
             this.label1 = new Label();
-            this.txtOutput = new TextBox();
             this.btnWrite = new Button();
             this.colorDialog1 = new ColorDialog();
             this.chkTS = new CheckBox();
@@ -44,6 +43,7 @@
             this.rtfMenthorQ = new TextBox();
             this.rtfMancini = new TextBox();
             this.chkMancini = new CheckBox();
+            this.txtOutput = new ComboBox();
             this.SuspendLayout();
             // 
             // label1
@@ -54,14 +54,6 @@
             this.label1.Size = new Size(85, 20);
             this.label1.TabIndex = 0;
             this.label1.Text = "Output File:";
-            // 
-            // txtOutput
-            // 
-            this.txtOutput.Location = new Point(113, 18);
-            this.txtOutput.Name = "txtOutput";
-            this.txtOutput.Size = new Size(345, 27);
-            this.txtOutput.TabIndex = 1;
-            this.txtOutput.Text = "c:\\temp\\MotiveLines.csv";
             // 
             // btnWrite
             // 
@@ -190,11 +182,22 @@
             this.chkMancini.Text = "Output Mancini Lines";
             this.chkMancini.UseVisualStyleBackColor = true;
             // 
+            // txtOutput
+            // 
+            this.txtOutput.FormattingEnabled = true;
+            this.txtOutput.Items.AddRange(new object[] { "c:\\temp\\MotiveLines.csv", "c:\\temp\\MotiveLinesNQ.csv", "c:\\temp\\MotiveLinesES.csv", "c:\\temp\\MotiveLinesYM.csv" });
+            this.txtOutput.Location = new Point(113, 17);
+            this.txtOutput.Name = "txtOutput";
+            this.txtOutput.Size = new Size(339, 28);
+            this.txtOutput.TabIndex = 22;
+            this.txtOutput.Text = "c:\\temp\\MotiveLinesES.csv";
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new SizeF(8F, 20F);
             this.AutoScaleMode = AutoScaleMode.Font;
             this.ClientSize = new Size(804, 724);
+            this.Controls.Add(this.txtOutput);
             this.Controls.Add(this.rtfMancini);
             this.Controls.Add(this.chkMancini);
             this.Controls.Add(this.rtfMenthorQ);
@@ -207,7 +210,6 @@
             this.Controls.Add(this.chkKillpips);
             this.Controls.Add(this.chkTS);
             this.Controls.Add(this.btnWrite);
-            this.Controls.Add(this.txtOutput);
             this.Controls.Add(this.label1);
             this.MaximizeBox = false;
             this.Name = "frmMain";
@@ -220,7 +222,6 @@
         #endregion
 
         private Label label1;
-        private TextBox txtOutput;
         private Button btnWrite;
         private ColorDialog colorDialog1;
         private CheckBox chkTS;
@@ -234,5 +235,6 @@
         private TextBox rtfMenthorQ;
         private TextBox rtfMancini;
         private CheckBox chkMancini;
+        private ComboBox txtOutput;
     }
 }
