@@ -1,6 +1,7 @@
 package TraderOracle;
 
 import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
@@ -16,9 +17,9 @@ import com.motivewave.platform.sdk.draw.*;
         namespace="com.DickInTheSpleen",
         id="TOMethod2",
         rb="TraderOracle.nls.strings", // locale specific strings are loaded from here
-        name="TraderOracle Method2",
+        name="TraderOracle Method",
         label="TOMethod",
-        desc="TraderOracle Method2",
+        desc="TraderOracle Method",
         menu="TraderOracle",
         overlay=true,
         studyOverlay=true,
@@ -28,22 +29,43 @@ public class TOMethod extends Study
 {
     //region VARIABLES
     enum Values { MA, MA2, MA3, MA1, MOMENTUM, BB_KC_DIFF, MACD, SIGNAL, HIST }
-    enum Signals { ENG_BB, BOINK }
+    enum Signals { ENG_BB, BOINK, CANDLEOVERCANDLE }
 
     private static final Color RED = new Color(255, 0, 0);
     private static final Color GREEN = new Color(0, 255, 0);
     private static final Color WHITE = new Color(255, 255, 255);
     private static final Color YELLOW = new Color(255, 0, 0);
+
     private List<Line> al = new ArrayList<>();
+    private boolean bDrawn = false;
+    private boolean bShowBOINK = true;
     //endregion
+
+    //region INITIALIZE AND MISC
 
     @Override
     public void initialize(Defaults defaults)
     {
-        var sd=createSD();
-        var tab=sd.addTab("BOINK");
-        var grp=tab.addGroup("Inputs");
-        grp.addRow(new BooleanDescriptor("ShowBOINK", "Show BOINKs", true));
+        var sd = createSD();
+
+        var tab2 = sd.addTab("Candle Over Candle BB");
+        var grp2 = tab2.addGroup("Inputs");
+        grp2.addRow(new BooleanDescriptor("CANDLEBB", "Standard Signal", true));
+
+        grp2 = tab2.addGroup("Markers");
+        grp2.addRow(new MarkerDescriptor("UPCANDLEBBMarker", "Up Marker", Enums.MarkerType.TRIANGLE, Enums.Size.SMALL,
+                defaults.getGreen(), defaults.getLineColor(), true, true));
+        grp2.addRow(new MarkerDescriptor("DOWNCANDLEBBMarker", "Down Marker", Enums.MarkerType.TRIANGLE,
+                Enums.Size.SMALL, defaults.getRed(), defaults.getLineColor(), true, true));
+
+        var tab = sd.addTab("BOINK");
+        var grp = tab.addGroup("Inputs");
+
+        grp.addRow(new BooleanDescriptor("STDBOINK", "Standard Boinks", true));
+        grp.addRow(new BooleanDescriptor("STRICKTBOINK", "Only Strick Boinks", false));
+        grp.addRow(new BooleanDescriptor("DOUBLEWICKBOINK", "Double wick Boinks", true));
+        grp.addRow(new BooleanDescriptor("3RUNUP", "Triple candle run-up", false));
+
         grp.addRow(new BooleanDescriptor("UseKAMA", "Use KAMA", true));
         grp.addRow(new IntegerDescriptor("KAMAPeriod", "KAMA Period", 9, 1, 9999, 1));
         grp.addRow(new BooleanDescriptor("StdEMA", "Use Standard EMA", false));
@@ -62,34 +84,129 @@ public class TOMethod extends Study
 
         grp1 = tab1.addGroup("Markers");
         grp1.addRow(new MarkerDescriptor("UPEngBBMarker", "Up Marker",
-           Enums.MarkerType.CIRCLE, Enums.Size.SMALL,
-           defaults.getGreen(), defaults.getLineColor(), true, true));
+                Enums.MarkerType.CIRCLE, Enums.Size.SMALL,
+                defaults.getGreen(), defaults.getLineColor(), true, true));
         grp1.addRow(new MarkerDescriptor("DOWNEngBBMarker", "Down Marker",
-           Enums.MarkerType.CIRCLE, Enums.Size.SMALL,
-           defaults.getRed(), defaults.getLineColor(), true, true));
+                Enums.MarkerType.CIRCLE, Enums.Size.SMALL,
+                defaults.getRed(), defaults.getLineColor(), true, true));
 
         RuntimeDescriptor desc = new RuntimeDescriptor();
         setRuntimeDescriptor(desc);
         desc.declareSignal(Signals.BOINK, "BOINK");
-        desc.declareSignal(Signals.ENG_BB, "Engulfing candle off BB");
+        desc.declareSignal(Signals.ENG_BB, "Engulfing Candle Off BB");
+        desc.declareSignal(Signals.CANDLEOVERCANDLE, "Candle Over Candle after BB");
+    }
+
+    //endregion
+
+    private int CheckForBoink(DataSeries series, int index, Object input)
+    {
+        if (!bShowBOINK)
+            return 0;
+
+        boolean bSrictBoink = getSettings().getBoolean("STRICKTBOINK");
+        boolean bStdBoink = getSettings().getBoolean("STDBOINK");
+        boolean bDoubleWick = getSettings().getBoolean("DOUBLEWICKBOINK");
+        boolean b3CandleRunup = getSettings().getBoolean("3RUNUP");
+
+        boolean bUseKama = getSettings().getBoolean("UseKAMA");
+        boolean bStdEMA = getSettings().getBoolean("StdEMA");
+        int iKamaPeriod = getSettings().getInteger("KAMAPeriod");
+        int iEMAPeriod = getSettings().getInteger("EMAPeriod");
+
+        double close = series.getClose(index);
+        double open =  series.getOpen(index);
+        double pclose = series.getClose(index - 1);
+        double popen =  series.getOpen(index - 1);
+        double ppclose = series.getClose(index - 2);
+        double ppopen =  series.getOpen(index - 2);
+        double clow = series.getLow(index);
+        double plow = series.getLow(index - 1);
+        double pplow = series.getLow(index - 2);
+        double high = series.getHigh(index);
+        double phigh = series.getHigh(index - 1);
+        double pphigh = series.getHigh(index - 2);
+        boolean c0G = close > series.getOpen(index);
+        boolean c1G = series.getClose(index - 1) > series.getOpen(index - 1);
+        boolean c2G = series.getClose(index - 2) > series.getOpen(index - 2);
+        boolean c0R = close < open;
+        boolean c1R = series.getClose(index - 1) < series.getOpen(index - 1);
+        boolean c2R = series.getClose(index - 2) < series.getOpen(index - 2);
+        double body = Math.abs(open - close);
+        double pbody = Math.abs(series.getOpen(index - 1) - series.getClose(index - 1));
+        double kama = series.kama(index, iKamaPeriod, input);
+        double ema21 = series.ema(index, iEMAPeriod, input);
+        double ema200 = series.ema(index, 200, input);
+        boolean bGDoji = c1G && pbody < phigh - pclose && pbody < popen - plow;
+        boolean bRDoji = c1R && pbody < phigh - popen && pbody < pclose - plow;
+        boolean bDoji = bGDoji || bRDoji;
+
+        double myEMA = ema21;
+        if (bUseKama)
+            myEMA = kama;
+
+        // Within High/Low
+        boolean bInHiLo = clow < myEMA && high > myEMA;
+        boolean bGClose = close > myEMA;
+        boolean bRClose = close < myEMA;
+        boolean bPrevInHiLo = plow < myEMA && phigh > myEMA;
+        boolean bPrevHi = (ppclose > pclose || pphigh > phigh);
+        boolean bPrevLo = (ppclose < pclose || pplow < plow);
+        boolean bEmaHug =
+        (c0R && close < myEMA && open > myEMA) || (c0G && close > myEMA && open < myEMA) &&
+        (c1R && pclose < myEMA && popen > myEMA) || (c1G && pclose > myEMA && popen < myEMA) &&
+        (c2R && ppclose < myEMA && ppopen > myEMA) || (c2G && ppclose > myEMA && ppopen < myEMA);
+        // Within candle body
+        boolean bInBODY = (close < myEMA && open > myEMA) || (close > myEMA && open < myEMA);
+
+        if (false) // (bStdBoink)
+        {  // Green, prev RED.  In EMA, Prev candle higher
+            if (c0G && c1R && bInHiLo && bGClose)
+                return 1;
+            if (c0R && c1G && bInHiLo && bRClose)
+                return -1;
+        }
+        if (bStdBoink && !bEmaHug)
+        {  // Green, prev RED, prevprev RED. In EMA, Prev candle higher
+            if (popen > myEMA && bGClose && c0G && c1R && c2R && bInHiLo && bPrevHi)
+                return 1;
+            if (popen < myEMA && bRClose && c0R && c1G && c2R && bInHiLo && bPrevLo)
+                return -1;
+        }
+        if (bDoubleWick && !bEmaHug)
+        {   //  green  prev red    WICK    PWICK
+            if (c0G && c1R && open > myEMA && clow < myEMA && pphigh > phigh)
+                return 1;
+            if (c0R && c1G && open < myEMA && high > myEMA && pplow < plow)
+                return -1;
+            //(c0G && bGDoji && clow < myEMA && close > myEMA && phigh < myEMA)
+        }
+        if (false)
+        {
+            //(c0G && bRDoji && clow < myEMA && close > myEMA && plow <= clow)
+        }
+        if (b3CandleRunup)
+        {
+            if (c0G && c1G && c2G && open <= pclose && popen <= ppclose && bInHiLo)
+                return 1;
+        }
+
+        return 0;
     }
 
     @Override
-    protected void calculate(int index, DataContext ctx) {
+    protected void calculate(int index, DataContext ctx)
+    {
         var series = ctx.getDataSeries();
 
         int last = series.size() - 1;
         Object input = getSettings().getInput(Inputs.INPUT);
         if (series == null || index < 202 || !series.isBarComplete(index)) return;
 
-        //series.setPriceBarColor(index, Color.white);
-        //series.setDouble(index, Values.MA, 19680d);
-        //if (index == series.size() - 1)
-        //    series.setComplete(index);
-
         //region CANDLE CALCS
 
         // GET CONFIG SETTINGS
+        boolean bCandleOverBB = getSettings().getBoolean("CANDLEBB");
         boolean bShowBOINK = getSettings().getBoolean("ShowBOINK");
         boolean bUseKama = getSettings().getBoolean("KAMAPeriod");
         boolean bUseStdEMA = getSettings().getBoolean("StdEMA");
@@ -131,13 +248,25 @@ public class TOMethod extends Study
 
         // Calculate Bollinger Bands
         double middleBB = series.sma(index , 20, input);
+        double pmiddleBB = series.sma(index-1 , 20, input);
         double stdDev = series.std(index, 20, input);
         double upperBB = middleBB + (2 * stdDev);
+        double pupperBB = pmiddleBB + (2 * stdDev);
         double lowerBB = middleBB - (2 * stdDev);
+        double plowerBB = pmiddleBB - (2 * stdDev);
         //endregion
 
         //region BOINKS
-        if (bShowBOINK && (c0R && c1G && high > myEMA && close < myEMA && phigh < high))
+
+        if (CheckForBoink(series, index, input) == 1) // GREEN
+        {
+            var marker = getSettings().getMarker("UPBOINKMarker");
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) clow-1);
+            this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Howdy Msg"));
+            ctx.signal(index, Signals.BOINK, "BOINK", close);
+            return;
+        }
+        if (CheckForBoink(series, index, input) == -1) // RED
         {
             var marker = getSettings().getMarker("DOWNBOINKMarker");
             Coordinate coords = new Coordinate(series.getStartTime(index), (double) high+1);
@@ -146,15 +275,24 @@ public class TOMethod extends Study
             return;
         }
 
-        if (bShowBOINK && (c0G && c1R && clow < myEMA && close > myEMA && phigh > high) ||
-             (c0G && bGDoji && clow < myEMA && close > myEMA && phigh < myEMA) ||
-             (c0G && bRDoji && clow < myEMA && close > myEMA && plow <= clow) ||
-             (c0G && c1G && c2G && open <= pclose && popen <= ppclose && clow < myEMA && close > myEMA))
+        //endregion
+
+        //region CANDLE OVER CANDLE BB
+        if (bCandleOverBB && plow < plowerBB && c0G && c1G && open >= pclose)
         {
-            var marker = getSettings().getMarker("UPBOINKMarker");
-            Coordinate coords = new Coordinate(series.getStartTime(index), (double) clow-1);
+            var marker = getSettings().getMarker("UPCANDLEBBMarker");
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 1);
             this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Howdy Msg"));
-            ctx.signal(index, Signals.BOINK, "BOINK", close);
+            ctx.signal(index, Signals.CANDLEOVERCANDLE, "CandleOverCandle", close);
+            return;
+        }
+
+        if (bCandleOverBB && phigh > pupperBB && c0R && c1R && open <= pclose)
+        {
+            var marker = getSettings().getMarker("DOWNCANDLEBBMarker");
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 1);
+            this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "Howdy Msg"));
+            ctx.signal(index, Signals.CANDLEOVERCANDLE, "CandleOverCandle", close);
             return;
         }
         //endregion
@@ -197,46 +335,48 @@ public class TOMethod extends Study
         }
         //endregion
 
-
         //region VOLUME IMBALANCES
-        /*
+
         // =-=-=-=-=   VOLUME IMBALANCES GREEN   =-=-=-=-=
         if (c0G && c1G && open > pclose)
         {
-            int iStart = series.getStartIndex();
-            int iEnd = series.getEndIndex();
-            Coordinate coords = new Coordinate(series.getStartTime(index), (double) open);
-            Coordinate coordsEnd = new Coordinate(series.getStartTime(iEnd), (double) open);
-            // PathInfo(Color c, float width, float[] dash, boolean enabled, boolean continuous, boolean showBars, int barCenter, Integer fixedWidth)
-            PathInfo pf = new PathInfo(new Color(126, 179, 252), 2, new float[] {4,1,3}, true, true, false, 0, 2);
+            //series.setPriceBarColor(index, WHITE);
+            //var marker = getSettings().getMarker("UPEngBBMarker");
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 1);
+            //this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Howdy Msg"));
+            //ctx.signal(index, Signals.ENG_BB, "ENG_BB", close);
+
+            Coordinate coordsEnd = new Coordinate(series.getStartTime(index + 1), (double) clow);
+            PathInfo pf = new PathInfo(WHITE, 5, new float[] {4,1,3}, true, true, false, 0, 2);
             Line lk = new Line(coords, coordsEnd, pf);
-            lk.setExtendRightBounds(true);
-            // lk.setText(Math.abs(open), new Font("Arial", Font.PLAIN, 12));
-            if (!al.contains(lk))
-                al.add(lk);
+            //lk.setExtendRightBounds(true);
+            lk.setText("VolImb", new Font("Arial", Font.PLAIN, 12));
+            //if (!al.contains(lk))
+            //    al.add(lk);
             //this.addFigure(lk);
         }
 
         // =-=-=-=-=   VOLUME IMBALANCES RED   =-=-=-=-=
         if (c0R && c1R && open < pclose)
         {
-            int iStart = series.getStartIndex();
-            int iEnd = series.getEndIndex();
-            Coordinate coords = new Coordinate(series.getStartTime(index), (double) close);
-            Coordinate coordsEnd = new Coordinate(series.getStartTime(iEnd), (double) close);
-            // PathInfo(Color c, float width, float[] dash, boolean enabled, boolean continuous, boolean showBars, int barCenter, Integer fixedWidth)
-            PathInfo pf = new PathInfo(new Color(126, 179, 252), 2, new float[] {4,1,3}, true, true, false, 0, 2);
+            //series.setPriceBarColor(index, WHITE);
+            //var marker = getSettings().getMarker("DOWNEngBBMarker");
+            Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 1);
+            //this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "Howdy Msg"));
+            //ctx.signal(index, Signals.ENG_BB, "ENG_BB", close);
+
+            Coordinate coordsEnd = new Coordinate(series.getStartTime(index)+1, (double) high);
+            PathInfo pf = new PathInfo(WHITE, 2, new float[] {4,1,3}, true, true, false, 0, 2);
             Line lk = new Line(coords, coordsEnd, pf);
-            lk.setExtendRightBounds(true);
-            // lk.setText(Math.abs(open), new Font("Arial", Font.PLAIN, 12));
-            if (!al.contains(lk))
-                al.add(lk);
+            //lk.setExtendRightBounds(true);
+            lk.setText("VolImb", new Font("Arial", Font.PLAIN, 12));
+            //if (!al.contains(lk))
+            //    al.add(lk);
             //this.addFigure(lk);
         }
-*/
-        //endregion
-        
-        for (Line line : al) {
+/*
+        for (Line line : al)
+        {
             boolean bGStop = c0G && close > line.getEndValue() && open < line.getEndValue();
             boolean bG1Stop = c0G && open > line.getEndValue() && clow < line.getEndValue();
             boolean bG2Stop = false; // c0G && close > line.getEndValue() && high > line.getEndValue();
@@ -255,21 +395,23 @@ public class TOMethod extends Study
         }
         //debug("line after = " + al.size());
 
-        /*
-        LineInfo lf = new LineInfo(19680d, Color.red, 2.0f, new float[] {3,3});
+        //endregion
+
+        LineInfo lf = new LineInfo(20020d, Color.WHITE, 1.0f, new float[] {3,1,2});
         RuntimeDescriptor ts = new RuntimeDescriptor();
         setRuntimeDescriptor(ts);
         Plot t = ts.getDefaultPlot();
-        t.setShowLabel(true);
-        t.isShowLabel();
-        //t.addHorizontalLine(lf);
+        t.addHorizontalLine(lf);
         ts.addPlot("kjkj", t);
-        for (int i = 0; i < al.size(); i++) {
+        for (int i = 0; i < al.size(); i++)
+        {
             //ts.addHorizontalLine(new LineInfo(al.get(i), RED, 2.0f, new float[] {3,3}));
         }
-*/
+
         if (index == series.size() - 1)
             series.setComplete(index);
+
+         */
     }
 
 }
