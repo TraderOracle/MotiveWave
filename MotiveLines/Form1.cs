@@ -16,59 +16,59 @@ namespace MotiveLines
             s = s.Replace(" FTD", "");
 
             if (s.Contains("daily max"))
-                s = "🖤🖤  Value Area HIGH 🖤🖤  .";
+                s = "🖤🖤  Value Area HIGH  .";
             if (s.Contains("daily min"))
-                s = "🖤🖤  Value Area LOW  🖤🖤  .";
+                s = "🖤🖤  Value Area LOW  .";
 
             if (s.Contains("daily max"))
-                s = "🖐🏿🖐🏿  Daily Max  🖐🏿🖐🏿  .";
+                s = "🖐🏿🖐🏿  Daily Max  .";
             if (s.Contains("daily min"))
-                s = "🖐🏿🖐🏿  Daily Max  🖐🏿🖐🏿  .";
+                s = "🖐🏿🖐🏿  Daily Max  .";
             if (s.Contains("1DexpMAX"))
-                s = "🕷️🐈‍  1 Day Max  🐈‍🕷️  .";
+                s = "🕷️🐈‍  1 Day Max  .";
             if (s.Contains("1DexpMIN"))
-                s = "🕷️🐈‍  1 Day Min  🐈‍🕷️  .";
+                s = "🕷️🐈‍  1 Day Min  .";
 
             if (s.Contains("vix r2"))
-                s = "🔥🔥  OVERBOUGHT Level 2  🔥🔥  .";
+                s = "🔥🔥  OVERBOUGHT Level 2  .";
             if (s.Contains("vix r1"))
-                s = "🔥  OVERBOUGHT Level 1  🔥  .";
+                s = "🔥  OVERBOUGHT Level 1  .";
 
             if (s.Contains("vix s2"))
-                s = "🔥🔥  OVERSOLD Level 2  🔥🔥  .";
+                s = "🔥🔥  OVERSOLD Level 2  .";
             if (s.Contains("vix s1"))
-                s = "🔥  OVERSOLD Level 1  🔥  .";
+                s = "🔥  OVERSOLD Level 1  .";
 
             if (s.Contains("in the Sand") || s.Contains("HV"))
-                s = "❓❓  LINE IN THE SAND  ❓❓  .";
+                s = "❓LINE IN THE SAND  .";
 
             else if (s.Contains("SD0"))
-                s = "🡇  SHORT level 1  🡇  .";
+                s = "🡇  SHORT level 1  .";
             else if (s.Contains("SD1"))
-                s = "🡇🡇  SHORT level 2  🡇🡇  .";
+                s = "🡇🡇  SHORT level 2  .";
             else if (s.Contains("SD2"))
-                s = "🡇🡇🡇  SHORT level 3  🡇🡇🡇 (long if fails)   .";
+                s = "🡇🡇🡇  SHORT level 3 (long if fails)   .";
 
             else if (s.Contains("Range Short"))
-                s = "🡇  Range Short  🡇  .";
+                s = "🡇  Range Short  .";
             else if (s.Contains("me Short"))
-                s = "🡇🡇🡇  EXTREME Short  🡇🡇🡇  .";
+                s = "🡇🡇🡇  EXTREME Short  .";
             else if (s.Contains("Odds Short"))
-                s = "🡇🡇  Highest Odds Short  🡇🡇  .";
+                s = "🡇🡇  Highest Odds Short  .";
 
             else if (s.Contains("RD0"))
-                s = "🡅  LONG level 1  🡅  .";
+                s = "🡅  LONG level 1  .";
             else if (s.Contains("RD1"))
-                s = "🡅🡅  LONG level 2  🡅🡅  .";
+                s = "🡅🡅  LONG level 2  .";
             else if (s.Contains("RD2"))
-                s = "🡅🡅🡅  LONG level 3  🡅🡅🡅 (short if fails)   .";
+                s = "🡅🡅🡅  LONG level 3 (short if fails)   .";
 
             else if (s.Contains("Range Long"))
-                s = "🡅  Range Long  🡅  .";
-            else if (s.Contains("me Long"))
-                s = "🡅🡅🡅  EXTREME Long  🡅🡅🡅  .";
+                s = "🡅  Range Long  .";
             else if (s.Contains("Odds Long"))
-                s = "🡅🡅  Highest Odds Long  🡅🡅  .";
+                s = "🡅🡅  Highest Odds Long  .";
+            else if (s.Contains("me Long"))
+                s = "🡅🡅🡅  EXTREME Long  .";
 
             return s;
         }
