@@ -44,7 +44,7 @@ public class GexBot extends Study {
     private String Greek = "vanna";
     private String sState = "state";
     private String nextFull = "full";
-    private String APIKey = "70x01AzU0p3Z";
+    private String APIKey = "......";
 
     private static final Color RED = new Color(255, 0, 0);
     private static final Color GREEN = new Color(0, 255, 0);
