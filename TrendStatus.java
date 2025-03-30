@@ -45,6 +45,7 @@ public class TrendStatus extends Study {
   private int gIndex = 0;
   private String sKPMsg = "";
   private String sMQMsg = "";
+  private String sTSMsg = "";
   private Map<Double, String> kpMap;
   private Map<String, Double> kpMapS;
   private Map<Double, String> mqMap;
@@ -110,7 +111,7 @@ public class TrendStatus extends Study {
         new StringDescriptor("ManciniSell", "Values", "", 400));
 
     grpQ.addRow(
-        new BooleanDescriptor("SHOWMTS", "Show TraderSmarts", true),
+        new BooleanDescriptor("SHOWTS", "Show TraderSmarts", true),
         new SpacerDescriptor(1, 20),
         new StringDescriptor("TS", "Values", "20679.75 - 20663.25 Extreme Short20423.50 - 20420.75 Highest Odds Short FTU20314.00 Range Short20129.50 Line in the Sand19961.75 Range Long19929.75 - 19911.50 Highest Odds Long FTD19715.75 - 19705.00 Extreme LongNQ MTS Numbers: 20905.75, 20663.25, 19905.25, 18922.00, 18808.00, 18369.25, 17721.50, 17672.00, 17558.00", 400));
 
@@ -136,6 +137,7 @@ public class TrendStatus extends Study {
 
   //endregion
 
+  //region TRADER SMARTS
   private void FillTraderSmarts()
   {
     //debug("FillTraderSmarts = " + src + ", " + xx);
@@ -206,9 +208,8 @@ public class TrendStatus extends Study {
 
       }
     }
-    //debug("ts = " + ts);
-    //debug("tsMTS = " + tsMTS);
   }
+  //endregion
 
   //region BAR CLOSE
 
@@ -217,17 +218,55 @@ public class TrendStatus extends Study {
   {
     var s = ctx.getDataSeries();
     this.clearFigures();
-    boolean bShowBOINK = getSettings().getBoolean("SHOWKP");
 
-    if (getSettings().getBoolean("SHOWKP")) {
+    boolean bShowKillpips = getSettings().getBoolean("SHOWKP");
+    boolean bShowMenthorQ = getSettings().getBoolean("SHOWMQ");
+    boolean bShowTS = getSettings().getBoolean("SHOWTS");
+    double close = s.getClose();
+    double open = s.getOpen();
+    double hi = s.getHigh();
+    double lo = s.getLow();
+    boolean c0G = s.getClose() > s.getOpen();
+    boolean c0R = s.getClose() < s.getOpen();
+
+    if (bShowTS) {
+      sTSMsg = "";
+      for (RangeEntry tsi : tsRange) {
+        // Single value
+        if (tsi.start == tsi.end){
+          if (hi > tsi.start && lo < tsi.start) {
+            sTSMsg = "Touching " + tsi.text;
+            break;
+          }
+          else if ((c0G && hi > tsi.start && close < tsi.start) ||
+                  (c0G && lo < tsi.start && open > tsi.start) ||
+                  (c0R && hi > tsi.start && open < tsi.start) ||
+                  (c0R && lo < tsi.start && close > tsi.start)){
+            sTSMsg = "Wicking " + tsi.text;
+            break;
+          }
+        }
+        // Range values
+        if (tsi.start > tsi.end && close > tsi.end && close < tsi.start) {
+          sTSMsg = "Inside " + tsi.text;
+          break;
+        }
+        if (tsi.start < tsi.end && close < tsi.end && close > tsi.start) {
+          sTSMsg = "Inside " + tsi.text;
+          break;
+        }
+      }
+    }
+
+    if (bShowKillpips) {
       sKPMsg = getKillStatus(s.getClose()) +
           getTouch(ctx, kpMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
     }
 
-    if (getSettings().getBoolean("SHOWMQ")) {
+    if (bShowMenthorQ) {
       sMQMsg = getTouch(ctx, mqMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
       if (sMQMsg.equals(""))
-        sMQMsg = getTouch(ctx, bsMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
+          sMQMsg = getTouch(ctx, bsMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
     }
 
     Box bx = new Box();
@@ -301,8 +340,9 @@ public class TrendStatus extends Study {
       int iY = getSettings().getInteger("YPOS");
       int iX = getSettings().getInteger("XPOS");
       int iSpacer = getSettings().getInteger("LINESPACE");
-      Color cKP = sKPMsg.contains("Long") ? GREEN :
-          sKPMsg.contains("Short") ? RED : WHITE;
+      Color cTS = sTSMsg.contains("Long") ? GREEN : sTSMsg.contains("Sand") ? new Color(185, 99, 255) :
+          sTSMsg.contains("Short") ? RED : WHITE;
+      Color cKP = sKPMsg.contains("Long") ? GREEN : sKPMsg.contains("Short") ? RED : WHITE;
       Color cMQ = sMQMsg.contains("GEX") ? new Color(255, 187, 61) :
           sMQMsg.contains("BL ") ? new Color(185, 99, 255) :
           sMQMsg.contains("Resist") || sMQMsg.contains("Max") ? RED :
@@ -322,6 +362,12 @@ public class TrendStatus extends Study {
         if (getSettings().getBoolean("SHOWMQ")) {
           gc.setColor(cMQ);
           gc.drawString("MenthorQ " + sMQMsg, iX, iY);
+          iY += iSpacer;
+        }
+
+        if (getSettings().getBoolean("SHOWTS")) {
+          gc.setColor(cTS);
+          gc.drawString("TraderSmarts " + sTSMsg, iX, iY);
           iY += iSpacer;
         }
 
@@ -364,20 +410,20 @@ public class TrendStatus extends Study {
       return;
 
     gIndex = index;
-    if (kpMap.size() == 0 && kpMapS.size() == 0)
+    if (kpMap.size() == 0 && kpMapS.size() == 0 && getSettings().getBoolean("SHOWKP"))
       FillMaps("KP", kpMap, kpMapS);
-    if (mqMap.size() == 0 && mqMapS.size() == 0)
+    if (mqMap.size() == 0 && mqMapS.size() == 0 && getSettings().getBoolean("SHOWMQ"))
       FillMaps("MQ", mqMap, mqMapS);
-    if (bsMap.size() == 0 && bsMapS.size() == 0)
+    if (bsMap.size() == 0 && bsMapS.size() == 0 && getSettings().getBoolean("SHOWMQ"))
       FillMaps("MQBS", bsMap, bsMapS);
-    //if (map.size() == 0)
+    if (tsRange.size() == 0 && getSettings().getBoolean("SHOWTS"))
       FillTraderSmarts();
   }
 
   @Override
   public void onSettingsUpdated(DataContext ctx)
   {
-    bDrawn = false;
+
   }
 
   //endregion
