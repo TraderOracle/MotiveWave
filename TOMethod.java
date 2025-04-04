@@ -18,7 +18,7 @@ import com.motivewave.platform.sdk.draw.*;
     id="TOMethod2",
     rb="TraderOracle.nls.strings", // locale specific strings are loaded from here
     name="TraderOracle Method",
-    label="TOMethod",
+    label="TraderOracle Method",
     desc="TraderOracle Method",
     menu="TraderOracle",
     overlay=true,
@@ -38,7 +38,6 @@ public class TOMethod extends Study
 
   private List<Figure> al = new ArrayList<>();
   private boolean bDrawn = false;
-  private boolean bShowBOINK = true;
   private int pIndex = 0;
   //endregion
 
@@ -51,13 +50,12 @@ public class TOMethod extends Study
     var tabQ = sd.addTab("Settings");
     var grpQ = tabQ.addGroup("Inputs");
     grpQ.addRow(new BooleanDescriptor("ShowEngBB", "Show Engulfing off BB", true));
-    grpQ.addRow(new BooleanDescriptor("CANDLEBB", "Show Candle Over Candle off BB", true));
+    grpQ.addRow(new BooleanDescriptor("CANDLEBB", "Show Bollinger Push Off", true));
     grpQ.addRow(new BooleanDescriptor("STDBOINK", "Show Standard Boinks", true));
-    grpQ.addRow(new BooleanDescriptor("DOUBLEWICKBOINK", "Show Double wick Boinks", true));
+    grpQ.addRow(new BooleanDescriptor("DOUBLEWICKBOINK", "Show Double Wick Boinks", true));
     grpQ.addRow(new BooleanDescriptor("3RUNUP", "Show Triple Candle Run-up", false));
-    grpQ.addRow(new BooleanDescriptor("STRICKTBOINK", "Only Strick Boinks", false));
 
-    var tab2 = sd.addTab("Candle Over Candle BB");
+    var tab2 = sd.addTab("Bollinger Push Off");
     var grp2 = tab2.addGroup("Markers");
     grp2.addRow(new MarkerDescriptor("UPCANDLEBBMarker", "Up Marker", Enums.MarkerType.TRIANGLE, Enums.Size.SMALL,
         defaults.getGreen(), defaults.getLineColor(), true, true));
@@ -94,17 +92,13 @@ public class TOMethod extends Study
     setRuntimeDescriptor(desc);
     desc.declareSignal(Signals.BOINK, "BOINK");
     desc.declareSignal(Signals.ENG_BB, "Engulfing Candle Off BB");
-    desc.declareSignal(Signals.CANDLEOVERCANDLE, "Candle Over Candle after BB");
+    desc.declareSignal(Signals.CANDLEOVERCANDLE, "Bollinger Push Off");
   }
   //endregion
 
   //region CHECK FOR BOINK
   private int CheckForBoink(DataSeries series, int index, Object input)
   {
-    if (!bShowBOINK)
-      return 0;
-
-    boolean bSrictBoink = getSettings().getBoolean("STRICKTBOINK");
     boolean bStdBoink = getSettings().getBoolean("STDBOINK");
     boolean bDoubleWick = getSettings().getBoolean("DOUBLEWICKBOINK");
     boolean b3CandleRunup = getSettings().getBoolean("3RUNUP");
@@ -204,8 +198,8 @@ public class TOMethod extends Study
     //region CANDLE CALCS
 
     // GET CONFIG SETTINGS
-    boolean bCandleOverBB = getSettings().getBoolean("CANDLEBB");
-    boolean bShowBOINK = getSettings().getBoolean("ShowBOINK");
+    boolean bBBPushOff = getSettings().getBoolean("CANDLEBB");
+    boolean bShowBOINK = getSettings().getBoolean("STDBOINK");
     boolean bUseKama = getSettings().getBoolean("KAMAPeriod");
     boolean bUseStdEMA = getSettings().getBoolean("StdEMA");
     boolean bUseBigEMA = getSettings().getBoolean("BigEMA");
@@ -248,51 +242,56 @@ public class TOMethod extends Study
 
     // Calculate Bollinger Bands
     double middleBB = series.sma(index , 20, input);
-    double pmiddleBB = series.sma(index-1 , 20, input);
+    double pmiddleBB = series.sma(index-1, 20, input);
+    double ppmiddleBB = series.sma(index-2, 20, input);
     double stdDev = series.std(index, 20, input);
     double upperBB = middleBB + (2 * stdDev);
     double pupperBB = pmiddleBB + (2 * stdDev);
+    double ppupperBB = ppmiddleBB + (2 * stdDev);
     double lowerBB = middleBB - (2 * stdDev);
     double plowerBB = pmiddleBB - (2 * stdDev);
+    double pplowerBB = ppmiddleBB - (2 * stdDev);
     //endregion
 
     //region BOINKS
 
-    if (CheckForBoink(series, index, input) == 1) // GREEN
-    {
-      var marker = getSettings().getMarker("UPBOINKMarker");
-      Coordinate coords = new Coordinate(series.getStartTime(index), (double) clow-1);
-      this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Howdy Msg"));
-      ctx.signal(index, Signals.BOINK, "BOINK", close);
-      return;
-    }
-    if (CheckForBoink(series, index, input) == -1) // RED
-    {
-      var marker = getSettings().getMarker("DOWNBOINKMarker");
-      Coordinate coords = new Coordinate(series.getStartTime(index), (double) high+1);
-      this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "Howdy Msg"));
-      ctx.signal(index, Signals.BOINK, "BOINK", close);
-      return;
+    if (bShowBOINK){
+      if (CheckForBoink(series, index, input) == 1) // GREEN
+      {
+        var marker = getSettings().getMarker("UPBOINKMarker");
+        Coordinate coords = new Coordinate(series.getStartTime(index), (double) clow-1);
+        this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "BOINK"));
+        ctx.signal(index, Signals.BOINK, "BOINK", close);
+        return;
+      }
+      if (CheckForBoink(series, index, input) == -1) // RED
+      {
+        var marker = getSettings().getMarker("DOWNBOINKMarker");
+        Coordinate coords = new Coordinate(series.getStartTime(index), (double) high+1);
+        this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "BOINK"));
+        ctx.signal(index, Signals.BOINK, "BOINK", close);
+        return;
+      }
     }
 
     //endregion
 
-    //region CANDLE OVER CANDLE BB
-    if (bCandleOverBB && plow < plowerBB && c0G && c1G && open >= pclose)
+    //region BOLLINGER PUSH OFF
+    if (bBBPushOff && pplow <= pplowerBB && plow <= plowerBB && c0G && c1G && c2R)
     {
       var marker = getSettings().getMarker("UPCANDLEBBMarker");
       Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 1);
-      this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Howdy Msg"));
-      ctx.signal(index, Signals.CANDLEOVERCANDLE, "CandleOverCandle", close);
+      this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Bollinger Push Off"));
+      ctx.signal(index, Signals.CANDLEOVERCANDLE, "Bollinger Push Off", close);
       return;
     }
 
-    if (bCandleOverBB && phigh > pupperBB && c0R && c1R && open <= pclose)
+    if (bBBPushOff && pphigh >= ppupperBB && phigh >= pupperBB && c0R && c1R && c2G)
     {
       var marker = getSettings().getMarker("DOWNCANDLEBBMarker");
       Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 1);
-      this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "Howdy Msg"));
-      ctx.signal(index, Signals.CANDLEOVERCANDLE, "CandleOverCandle", close);
+      this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "Bollinger Push Off"));
+      ctx.signal(index, Signals.CANDLEOVERCANDLE, "Bollinger Push Off", close);
       return;
     }
     //endregion
@@ -302,7 +301,7 @@ public class TOMethod extends Study
     {
       var marker = getSettings().getMarker("UPEngBBMarker");
       Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 1);
-      this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Howdy Msg"));
+      this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "ENGULFING CANDLE"));
       ctx.signal(index, Signals.ENG_BB, "ENG_BB", close);
       if (bColorCandle)
         series.setPriceBarColor(index, WHITE);
@@ -316,7 +315,7 @@ public class TOMethod extends Study
       int iEnd = series.getEndIndex();
       Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 1);
       Coordinate coordsEnd = new Coordinate(series.getStartTime(index-100), (double) series.getHigh(index) + 2.2);
-      this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "Howdy Msg"));
+      this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "ENGULFING CANDLE"));
 
       /*
       Box bx = new Box(coords, coordsEnd);
@@ -346,91 +345,6 @@ public class TOMethod extends Study
       this.addFigure(lx);
     }
 
-    //region VOLUME IMBALANCES
-
-    // =-=-=-=-=   VOLUME IMBALANCES GREEN   =-=-=-=-=
-    if (c0G && c1G && open > pclose && false)
-    {
-      Coordinate coordsEnd = new Coordinate(series.getEndTime(series.getEndIndex()), (double) series.getOpen(index));
-      //series.setPriceBarColor(index, WHITE);
-      //var marker = getSettings().getMarker("UPEngBBMarker");
-      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getOpen(index));
-      for (int i = index; i < series.size(); i++){
-        if (series.getLow(i) < series.getOpen(index)){
-          coordsEnd = new Coordinate(series.getEndTime(i), (double) series.getOpen(index));
-        }
-      }
-      //this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Howdy Msg"));
-      //ctx.signal(index, Signals.ENG_BB, "ENG_BB", close);
-
-      //Coordinate coordsEnd = new Coordinate(series.getEndTime(index + 1), (double) clow);
-      PathInfo pf = new PathInfo(WHITE, 1, new float[] {4,1,3}, true, true, false, 0, 2);
-      Line lk = new Line(coords, coordsEnd, pf);
-      //lk.setExtendRightBounds(false);
-      //if (coordsEnd == null)
-      //  lk.setExtendRightBounds(true);
-      //lk.setText("VolImb", new Font("Arial", Font.PLAIN, 12));
-      //if (!al.contains(lk))
-      //  al.add(lk);
-      this.addFigure(lk);
-    }
-
-    // =-=-=-=-=   VOLUME IMBALANCES RED   =-=-=-=-=
-    if (c0R && c1R && open < pclose && false)
-    {
-      //series.setPriceBarColor(index, WHITE);
-      //var marker = getSettings().getMarker("DOWNEngBBMarker");
-      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 1);
-      //this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "Howdy Msg"));
-      //ctx.signal(index, Signals.ENG_BB, "ENG_BB", close);
-
-      Coordinate coordsEnd = new Coordinate(series.getStartTime(index)+1, (double) high);
-      PathInfo pf = new PathInfo(WHITE, 2, new float[] {4,1,3}, true, true, false, 0, 2);
-      Line lk = new Line(coords, coordsEnd, pf);
-      //lk.setExtendRightBounds(true);
-      lk.setText("VolImb", new Font("Arial", Font.PLAIN, 12));
-      //if (!al.contains(lk))
-      //  al.add(lk);
-      //this.addFigure(lk);
-    }
-/*
-    for (Line line : al)
-    {
-      boolean bGStop = c0G && close > line.getEndValue() && open < line.getEndValue();
-      boolean bG1Stop = c0G && open > line.getEndValue() && clow < line.getEndValue();
-      boolean bG2Stop = false; // c0G && close > line.getEndValue() && high > line.getEndValue();
-      boolean bRStop = c0R && close < line.getEndValue() && open > line.getEndValue();
-      boolean bR1Stop = c0R && clow < line.getEndValue() && close > line.getEndValue();
-      int idxLine = series.findIndex(line.getEndTime());
-      if (idxLine > index && (bGStop || bRStop || bG1Stop || bR1Stop || bG2Stop))
-      {
-        line.setEnd(series.getStartTime(index), line.getEndValue());
-        line.setExtendRightBounds(false);
-        line.setExtendRight(0);
-        //this.addFigure(line);
-        break;
-      }
-      //al.remove(item);
-    }
-    //debug("line after = " + al.size());
-
-    //endregion
-
-    LineInfo lf = new LineInfo(20020d, Color.WHITE, 1.0f, new float[] {3,1,2});
-    RuntimeDescriptor ts = new RuntimeDescriptor();
-    setRuntimeDescriptor(ts);
-    Plot t = ts.getDefaultPlot();
-    t.addHorizontalLine(lf);
-    ts.addPlot("kjkj", t);
-    for (int i = 0; i < al.size(); i++)
-    {
-      //ts.addHorizontalLine(new LineInfo(al.get(i), RED, 2.0f, new float[] {3,3}));
-    }
-
-    if (index == series.size() - 1)
-      series.setComplete(index);
-
-     */
   }
 
 }

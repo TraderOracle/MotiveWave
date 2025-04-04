@@ -28,8 +28,8 @@ import com.motivewave.platform.sdk.draw.*;
 public class LineBounces extends Study
 {
     //region VARIABLES
-    enum Values { MA, MA2, MA3, MA1, MOMENTUM, BB_KC_DIFF, MACD, SIGNAL, HIST }
-    enum Signals { ENG_BB, BOINK }
+    enum Values { UP, DOWN, TREND }
+    enum Signals { WICK, TOUCH }
 
     private static final Color RED = new Color(255, 0, 0);
     private static final Color GREEN = new Color(0, 255, 0);
@@ -39,7 +39,100 @@ public class LineBounces extends Study
     private Map<Double, String> kpMap;
     private Map<Double, String> mqMap;
     private Map<Double, String> bsMap;
+    private List<RangeEntry> tsRange;
+    private int currIndex = 0;
+    private int gIndex = 0;
+
+    public static class RangeEntry {
+        private final double start;
+        private final double end;
+        private final String text;
+
+        public RangeEntry(double start, double end, String text) {
+            this.start = start;
+            this.end = end;
+            this.text = text;
+        }
+
+        public boolean between(double number) {
+            return number >= start && number <= end;
+        }
+
+        public String getText() {
+            return text;
+        }
+    }
+
     //endregion
+
+    @Override
+    public void onBarClose(DataContext ctx)
+    {
+        var s = ctx.getDataSeries();
+        int index = s.getEndIndex();
+debug("1");
+        boolean bShowKillpips = getSettings().getBoolean("SHOWKP");
+        boolean bShowMenthorQ = getSettings().getBoolean("SHOWMQ");
+        boolean bShowTS = getSettings().getBoolean("SHOWTS");
+        double close = s.getClose();
+        double open = s.getOpen();
+        double hi = s.getHigh();
+        double lo = s.getLow();
+        boolean c0G = s.getClose() > s.getOpen();
+        boolean c0R = s.getClose() < s.getOpen();
+
+        if (bShowTS) {
+            //sTSMsg = "";
+            for (RangeEntry tsi : tsRange) {
+                debug("2");
+                // Single value
+                if (tsi.start == tsi.end){
+                    if (hi > tsi.start && lo < tsi.start) {
+                        debug("ctx.signal 1");
+                        ctx.signal(index, Signals.TOUCH, "TraderSmarts Touching " + tsi.text, close);
+                        break;
+                    }
+                    else if ((c0G && hi > tsi.start && close < tsi.start) ||
+                        (c0G && lo < tsi.start && open > tsi.start) ||
+                        (c0R && hi > tsi.start && open < tsi.start) ||
+                        (c0R && lo < tsi.start && close > tsi.start)){
+                        debug("ctx.signal 2");
+                        ctx.signal(index, Signals.WICK, "TraderSmarts Wicking " + tsi.text, close);
+                        break;
+                    }
+                }
+                debug("3");
+                // Range values
+                if (tsi.start > tsi.end && close > tsi.end && close < tsi.start) {
+                    debug("ctx.signal 3");
+                    ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside  " + tsi.text, close);
+                    break;
+                }
+                if (tsi.start < tsi.end && close < tsi.end && close > tsi.start) {
+                    debug("ctx.signal 4");
+                    ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside  " + tsi.text, close);
+                    break;
+                }
+            }
+        }
+        debug("4");
+        if (bShowKillpips) {
+            String sKPMsg = getTouch(ctx, kpMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
+            if (sKPMsg != "")
+                ctx.signal(index, Signals.TOUCH, "Killips Touching " + sKPMsg, close);
+        }
+        debug("5");
+        if (bShowMenthorQ) {
+            String sMQMsg = getTouch(ctx, mqMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
+            if (sMQMsg != "")
+                ctx.signal(index, Signals.TOUCH, "MenthorQ Touching " + sMQMsg, close);
+
+            String sMQMsg2 = getTouch(ctx, bsMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
+            if (sMQMsg2 != "")
+                ctx.signal(index, Signals.TOUCH, "MenthorQ Touching " + sMQMsg2, close);
+        }
+
+    }
 
     //region INITIALIZE AND MISC
 
@@ -59,38 +152,139 @@ public class LineBounces extends Study
         }
     }
 
+    //region TRADER SMARTS
+    private void FillTraderSmarts()
+    {
+        //debug("FillTraderSmarts = " + src + ", " + xx);
+        tsRange.clear();
+        String tsMTS = "";
+        String ts = getSettings().getString("TS");
+
+        //debug("FillTraderSmarts = " + ts);
+        int idx = ts.indexOf("MTS Numbers:");
+        if (idx != -1) {
+            tsMTS = ts.substring(idx + "MTS Numbers:".length()).trim();
+            tsMTS = tsMTS.replaceAll(", ", ",");
+            //debug("tsMTS = " + tsMTS);
+            ts = ts.substring(0, idx).trim();
+            String[] nums = tsMTS.replaceAll("\\s+", "").split(",");
+            for (int i = 0; i < nums.length; i++) {
+                try {
+                    Double nummie = Double.parseDouble(nums[i].trim());
+                    tsRange.add(new RangeEntry(nummie, nummie, "MTS"));
+                    //debug("tsRange.add = " + nummie + " MTS");
+                } catch (NumberFormatException e) {}
+            }
+        }
+
+        int idxq = ts.indexOf("Target Zones:");
+        if (idxq != -1)
+            ts = ts.substring(idxq + "Target Zones:".length()).trim();
+        ts = ts.replaceAll("FTD", "");
+        ts = ts.replaceAll("FTU", "");
+        ts = ts.replaceAll(" - ", "-");
+        ts = ts.replaceAll("Short", "Short,");
+        ts = ts.replaceAll("Long", "Long,");
+        ts = ts.replaceAll("Sand", "Sand,");
+        //debug("Target Zones: " + ts);
+
+        // Values between the commas = 19825.75 Highest Odds Long
+        String[] nums = ts.split(",");
+        for (int i = 0; i < nums.length; i++) {
+            //debug("nums " + i + " = " + nums[i]);
+            // Values between the spaces
+            String[] spaces = nums[i].trim().split(" ");
+            for (int ip = 0; ip < spaces.length; ip++) {
+
+                if (spaces[ip].trim().contains("-")) {
+                    // Dash separated range = 20129.50-20111.25 Range Short
+                    String[] dash = spaces[ip].trim().replaceAll("\\s+", "").split("-");
+                    try {
+                        Double numone = Double.parseDouble(dash[0].trim());
+                        Double numtwo = Double.parseDouble(dash[1].trim());
+                        String[] descs = nums[ip].trim().split(" ");
+                        String desc = nums[ip].replaceAll(descs[0], "");
+                        tsRange.add(new RangeEntry(numone, numtwo, desc));
+                        //debug("Dash RangeEntry = " + numone + ", " + numtwo + ", " + desc);
+                        continue;
+                    } catch (NumberFormatException e) {}
+                }
+
+                try {
+                    // Simple strings = 19825.75 Highest Odds Long
+                    Double nummie = Double.parseDouble(spaces[ip].trim());
+                    String[] descs = nums[ip].trim().split(" ");
+                    String desc = nums[ip].replaceAll(descs[0], "");
+                    tsRange.add(new RangeEntry(nummie, nummie, desc));
+                    //debug("RangeEntry = " + nummie + " " + desc);
+                    continue;
+                } catch (NumberFormatException e) {}
+
+            }
+        }
+    }
+    //endregion
+
+    private String getTouch(DataContext ctx, Map<Double, String> map,
+       double high, double low, double open, double close) {
+        boolean c0G = close > open;
+        boolean c0R = close < open;
+
+        String sType = (map == kpMap) ? "Killpips " : (map == mqMap || map == bsMap) ? "MenthorQ " : "";
+
+        for (Map.Entry<Double, String> entry : map.entrySet()) {
+            Double price = entry.getKey();
+            if (high > price && low < price) {
+                ctx.signal(gIndex, Signals.TOUCH, "Price touched " + sType + entry.getValue(), close);
+                return " - Touching " + entry.getValue();
+            }
+            else if ((c0G && high > price && close < price) || (c0G && low < price && open > price) ||
+                (c0R && high > price && open < price) || (c0R && low < price && close > price)) {
+                ctx.signal(gIndex, Signals.WICK, "Wick off " + sType + entry.getValue(), close);
+                return " - WICK off " + entry.getValue();
+            }
+        }
+        return "";
+    }
+
     @Override
     public void initialize(Defaults defaults)
     {
         this.kpMap = new HashMap<>();
         this.mqMap = new HashMap<>();
         this.bsMap = new HashMap<>();
+        this.tsRange = new ArrayList<>();
 
         var sd = createSD();
 
-        var tab2 = sd.addTab("Line Services");
-        var grp2 = tab2.addGroup("Inputs");
+        var tab2 = sd.addTab("Lines");
+        var grp3 = tab2.addGroup("Show These");
+        grp3.addRow(new BooleanDescriptor("SHOWKP", "Show Killpips", true));
+        grp3.addRow(new BooleanDescriptor("SHOWMQ", "Show MenthorQ", true));
+        grp3.addRow(new BooleanDescriptor("SHOWMANBUY", "Show Mancini Buy", true));
+        grp3.addRow(new BooleanDescriptor("SHOWMANSELL", "Show Mancini Sell", true));
+        grp3.addRow(new BooleanDescriptor("SHOWTS", "Show TraderSmarts", true));
+        grp3.addRow(new BooleanDescriptor("SHOW200", "Show EMA 200 touches", true));
+        grp3.addRow(new BooleanDescriptor("SHOWVWAP", "Show VWAP touches", true));
 
+        var grp2 = tab2.addGroup("Paid Lines");
+        grp2.addRow(new StringDescriptor("TS", "Values", "YM Execution/Target Zones:41943 - 41909 Extreme Short41368 - 41323 Highest Odds Short FTU41118 Range Short40848 - 40805 Line in the Sand40493 Range Long39771 Highest Odds Long FTD39393 Extreme LongYM MTS Numbers: 43145, 41973, 41370, 40913, 40698, 39807, 39350", 500));
         //grp2.addRow(new InstrumentDescriptor("INSTR", "Instrument"));
-        grp2.addRow(new StringDescriptor("KP", "Killpips Values", "vix r1, 5888, vix r2, 5891, vix s1, 5744, vix s2, " +
-                "5738, 1DexpMAX, 5895, 1DexpMIN, 5732, RD0, 5829, RD1, 5842, RD2, 5868, SD0, 5802, SD1, 5789, SD2, " +
-                "5762, HV, 5815, VAH, 5911, VAL, 5719, range daily max, 5922, range daily min, 5709", 500));
-        grp2.addRow(new SpacerDescriptor(100, 100));
-        grp2.addRow(new StringDescriptor("MQ", "MenthorQ Values", "Call Resistance, 5850, Put Support, 5700, HVL, " +
-                "5750, 1D Min, 5761.88, 1D Max, 5869.12, Call Resistance 0DTE, 5850, Put Support 0DTE, 5740, HVL 0DTE, 5745, Gamma Wall 0DTE, 5850, GEX 1, 5830, GEX 2, 5840, GEX 3, 5825, GEX 4, 5820, GEX 5, 5800, GEX 6, 5900, GEX 7, 5875, GEX 8, 5725, GEX 9, 5880, GEX 10, 5870", 500));
-        grp2.addRow(new StringDescriptor("MQBS", "MenthorQ Blind Spots", "BL 1, 5758.07, BL 2, 5928.2, BL 3, 5723.35," +
-                " BL 4, 5748.73, BL 5, 5874.68, BL 6, 5806.5, BL 7, 5695.25, BL 8, 5795.08, BL 9, 5825.61, BL 10, 5895.9", 500));
-        grp2.addRow(new SpacerDescriptor(100, 100));
+        grp2.addRow(new StringDescriptor("KP", "Killpips Values", "vix r1, 41365, vix r2, 41399, vix s1, 40185, vix s2, 40155, 1DexpMAX, 41425, 1DexpMIN, 40129, RD0, 40892, RD1, 40993, RD2, 41215, SD0, 40665, SD1, 40561, SD2, 40343, HV, 40779, VAH, 41557, VAL, 39994, range daily max, 41643, range daily min, 39911", 500));
+        grp2.addRow(new StringDescriptor("MQ", "MenthorQ Values", "", 500));
+        grp2.addRow(new StringDescriptor("MQBS", "MenthorQ Blind Spots", "BL 1, 41534.35, BL 2, 41136.24, BL 3, 39993.99, BL 4, 42346.55, BL 5, 40996.71, BL 6, 40357.81, BL 7, 40728.68, BL 8, 41794.62, BL 9, 39076.64, BL 10, 41451.87", 500));
         grp2.addRow(new StringDescriptor("ManciniBuy", "Mancini Buy Values", "", 500));
         grp2.addRow(new StringDescriptor("ManciniSell", "Mancini Sell Values", "", 500));
+
+        RuntimeDescriptor desc = new RuntimeDescriptor();
+        setRuntimeDescriptor(desc);
+        desc.declareSignal(Signals.WICK, "Price wicked a line");
+        desc.declareSignal(Signals.TOUCH, "Price closed within a line");
     }
 
     @Override
     public void onSettingsUpdated(DataContext ctx)
     {
-        FillMaps("KP", kpMap);
-        FillMaps("MQ", mqMap);
-        FillMaps("MQBS", bsMap);
     }
 
     //endregion
@@ -125,8 +319,16 @@ public class LineBounces extends Study
         boolean bGDoji = c1G && pbody < phigh - pclose && pbody < popen - plow;
         boolean bRDoji = c1R && pbody < phigh - popen && pbody < pclose - plow;
         boolean bDoji = bGDoji || bRDoji;
-
         //endregion
+
+        if (kpMap.size() == 0 && getSettings().getBoolean("SHOWKP"))
+            FillMaps("KP", kpMap);
+        if (mqMap.size() == 0 && getSettings().getBoolean("SHOWMQ"))
+            FillMaps("MQ", mqMap);
+        if (bsMap.size() == 0 && getSettings().getBoolean("SHOWMQ"))
+            FillMaps("MQBS", bsMap);
+        if (tsRange.size() == 0 && getSettings().getBoolean("SHOWTS"))
+            FillTraderSmarts();
 
     }
 
