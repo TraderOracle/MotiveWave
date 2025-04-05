@@ -18,7 +18,7 @@ import com.motivewave.platform.sdk.draw.*;
         id="LineBounces",
         rb="TraderOracle.nls.strings", // locale specific strings are loaded from here
         name="Line Bounces",
-        label="LineBounces",
+        label="Line Bounces",
         desc="Line Bounces",
         menu="TraderOracle",
         overlay=true,
@@ -65,12 +65,14 @@ public class LineBounces extends Study
 
     //endregion
 
+    //region ON BAR CLOSE
+
     @Override
     public void onBarClose(DataContext ctx)
     {
         var s = ctx.getDataSeries();
         int index = s.getEndIndex();
-debug("1");
+
         boolean bShowKillpips = getSettings().getBoolean("SHOWKP");
         boolean bShowMenthorQ = getSettings().getBoolean("SHOWMQ");
         boolean bShowTS = getSettings().getBoolean("SHOWTS");
@@ -84,75 +86,66 @@ debug("1");
         if (bShowTS) {
             //sTSMsg = "";
             for (RangeEntry tsi : tsRange) {
-                debug("2");
                 // Single value
                 if (tsi.start == tsi.end){
                     if (hi > tsi.start && lo < tsi.start) {
-                        debug("ctx.signal 1");
-                        ctx.signal(index, Signals.TOUCH, "TraderSmarts Touching " + tsi.text, close);
+                        String sQ = tsi.text;
+                        if (tsi.text == "MTS")
+                            sQ += " " + s.getClose();
+                        debug("TraderSmarts Touched " + sQ);
+                        ctx.signal(index, Signals.TOUCH, "TraderSmarts Touched " + sQ, close);
                         break;
                     }
                     else if ((c0G && hi > tsi.start && close < tsi.start) ||
                         (c0G && lo < tsi.start && open > tsi.start) ||
                         (c0R && hi > tsi.start && open < tsi.start) ||
                         (c0R && lo < tsi.start && close > tsi.start)){
-                        debug("ctx.signal 2");
-                        ctx.signal(index, Signals.WICK, "TraderSmarts Wicking " + tsi.text, close);
+                        debug("TraderSmarts Wicking " + tsi.text);
+                        ctx.signal(index, Signals.WICK, "TraderSmarts Wick " + tsi.text, close);
                         break;
                     }
                 }
-                debug("3");
+
                 // Range values
                 if (tsi.start > tsi.end && close > tsi.end && close < tsi.start) {
-                    debug("ctx.signal 3");
-                    ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside  " + tsi.text, close);
+                    debug("TraderSmarts Inside  " + tsi.text);
+                    ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside " + tsi.text, close);
                     break;
                 }
                 if (tsi.start < tsi.end && close < tsi.end && close > tsi.start) {
-                    debug("ctx.signal 4");
-                    ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside  " + tsi.text, close);
+                    debug("TraderSmarts Inside  " + tsi.text);
+                    ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside " + tsi.text, close);
                     break;
                 }
             }
         }
-        debug("4");
+
         if (bShowKillpips) {
             String sKPMsg = getTouch(ctx, kpMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
             if (sKPMsg != "")
-                ctx.signal(index, Signals.TOUCH, "Killips Touching " + sKPMsg, close);
+                ctx.signal(index, Signals.TOUCH, "Killips " + sKPMsg, close);
         }
-        debug("5");
+
         if (bShowMenthorQ) {
+
             String sMQMsg = getTouch(ctx, mqMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
-            if (sMQMsg != "")
-                ctx.signal(index, Signals.TOUCH, "MenthorQ Touching " + sMQMsg, close);
+            if (sMQMsg != "") {
+                debug("MenthorQ " + sMQMsg);
+                ctx.signal(index, Signals.TOUCH, "MenthorQ " + sMQMsg, close);
+            }
 
             String sMQMsg2 = getTouch(ctx, bsMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
-            if (sMQMsg2 != "")
-                ctx.signal(index, Signals.TOUCH, "MenthorQ Touching " + sMQMsg2, close);
-        }
-
-    }
-
-    //region INITIALIZE AND MISC
-
-    private void FillMaps(String src, Map xx)
-    {
-        //Instrument sI = getSettings().getInstrument("INSTR");
-        //debug("FillMaps 1 = " + sI.getUnderlying());
-        String[] parts = getSettings().getString(src).split(", ");
-        for (int i = 0; i < parts.length; i++) {
-            try {
-                Double nums = Double.parseDouble(parts[i].trim());
-                String txt = parts[i-1].trim();
-                xx.put(Double.parseDouble(parts[i].trim()), parts[i-1].trim());
-                debug("xx = " + nums + ", " + txt);
-            } catch (NumberFormatException e) {
+            if (sMQMsg2 != "") {
+                debug("MenthorQ " + sMQMsg2);
+                ctx.signal(index, Signals.TOUCH, "MenthorQ " + sMQMsg2, close);
             }
         }
     }
 
+    //endregion
+
     //region TRADER SMARTS
+
     private void FillTraderSmarts()
     {
         //debug("FillTraderSmarts = " + src + ", " + xx);
@@ -223,7 +216,11 @@ debug("1");
             }
         }
     }
+
     //endregion
+
+
+    //region TOUCH LOGIC
 
     private String getTouch(DataContext ctx, Map<Double, String> map,
        double high, double low, double open, double close) {
@@ -236,7 +233,7 @@ debug("1");
             Double price = entry.getKey();
             if (high > price && low < price) {
                 ctx.signal(gIndex, Signals.TOUCH, "Price touched " + sType + entry.getValue(), close);
-                return " - Touching " + entry.getValue();
+                return " - Touched " + entry.getValue();
             }
             else if ((c0G && high > price && close < price) || (c0G && low < price && open > price) ||
                 (c0R && high > price && open < price) || (c0R && low < price && close > price)) {
@@ -246,6 +243,26 @@ debug("1");
         }
         return "";
     }
+
+    private void FillMaps(String src, Map xx)
+    {
+        //Instrument sI = getSettings().getInstrument("INSTR");
+        //debug("FillMaps 1 = " + sI.getUnderlying());
+        String[] parts = getSettings().getString(src).split(", ");
+        for (int i = 0; i < parts.length; i++) {
+            try {
+                Double nums = Double.parseDouble(parts[i].trim());
+                String txt = parts[i-1].trim();
+                xx.put(Double.parseDouble(parts[i].trim()), parts[i-1].trim());
+                debug("xx = " + nums + ", " + txt);
+            } catch (NumberFormatException e) {
+            }
+        }
+    }
+
+    //endregion
+
+    //region INITIALIZE
 
     @Override
     public void initialize(Defaults defaults)
