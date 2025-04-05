@@ -1,5 +1,8 @@
 package TraderOracle;
 
+import javax.sound.sampled.*;
+import java.io.File;
+import java.io.IOException;
 import java.awt.*;
 import java.awt.Graphics2D;
 import java.awt.geom.*;
@@ -12,14 +15,16 @@ import com.motivewave.platform.sdk.common.desc.*;
 import com.motivewave.platform.sdk.common.menu.*;
 import com.motivewave.platform.sdk.study.*;
 import com.motivewave.platform.sdk.draw.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @StudyHeader(
         namespace="com.DickInTheSpleen",
-        id="LineBounces",
+        id="LineBounces2",
         rb="TraderOracle.nls.strings", // locale specific strings are loaded from here
-        name="Line Bounces",
-        label="Line Bounces",
-        desc="Line Bounces",
+        name="Line Bounces2",
+        label="Line Bounces2",
+        desc="Line Bounces2",
         menu="TraderOracle",
         overlay=true,
         studyOverlay=true,
@@ -43,6 +48,7 @@ public class LineBounces extends Study
     private List<RangeEntry> tsRange;
     private int currIndex = 0;
     private int gIndex = 0;
+    private String sMsg = "";
 
     public static class RangeEntry {
         private final double start;
@@ -74,6 +80,10 @@ public class LineBounces extends Study
         var s = ctx.getDataSeries();
         int index = s.getEndIndex();
 
+        this.clearFigures();
+        Box bx = new Box();
+        addFigure(bx);
+
         boolean bShowKillpips = getSettings().getBoolean("SHOWKP");
         boolean bShowMenthorQ = getSettings().getBoolean("SHOWMQ");
         boolean bShowTS = getSettings().getBoolean("SHOWTS");
@@ -91,9 +101,9 @@ public class LineBounces extends Study
                 if (tsi.start == tsi.end){
                     if (hi > tsi.start && lo < tsi.start) {
                         String sQ = tsi.text;
-                        if (tsi.text == "MTS")
-                            sQ += " " + s.getClose();
-                        debug("TraderSmarts Touched " + sQ);
+                        //if (tsi.text == "MTS")
+                            sQ += " " + tsi.start;
+                        sMsg = "TraderSmarts Touched " + sQ;
                         ctx.signal(index, Signals.TOUCH, "TraderSmarts Touched " + sQ, close);
                         break;
                     }
@@ -101,7 +111,7 @@ public class LineBounces extends Study
                         (c0G && lo < tsi.start && open > tsi.start) ||
                         (c0R && hi > tsi.start && open < tsi.start) ||
                         (c0R && lo < tsi.start && close > tsi.start)){
-                        debug("TraderSmarts Wicking " + tsi.text);
+                        sMsg = "TraderSmarts Wicking " + tsi.text;
                         ctx.signal(index, Signals.WICK, "TraderSmarts Wick " + tsi.text, close);
                         break;
                     }
@@ -109,12 +119,12 @@ public class LineBounces extends Study
 
                 // Range values
                 if (tsi.start > tsi.end && close > tsi.end && close < tsi.start) {
-                    debug("TraderSmarts Inside  " + tsi.text);
+                    sMsg = "TraderSmarts Inside  " + tsi.text;
                     ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside " + tsi.text, close);
                     break;
                 }
                 if (tsi.start < tsi.end && close < tsi.end && close > tsi.start) {
-                    debug("TraderSmarts Inside  " + tsi.text);
+                    sMsg = "TraderSmarts Inside  " + tsi.text;
                     ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside " + tsi.text, close);
                     break;
                 }
@@ -123,27 +133,41 @@ public class LineBounces extends Study
 
         if (bShowKillpips) {
             String sKPMsg = getTouch(ctx, kpMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
-            if (sKPMsg != "")
+            if (sKPMsg != "") {
+                sMsg = "Killips " + sKPMsg;
                 ctx.signal(index, Signals.TOUCH, "Killips " + sKPMsg, close);
+            }
         }
 
         if (bShowMenthorQ) {
-
             String sMQMsg = getTouch(ctx, mqMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
             if (sMQMsg != "") {
-                debug("MenthorQ " + sMQMsg);
+                sMsg = "MenthorQ " + sMQMsg;
                 ctx.signal(index, Signals.TOUCH, "MenthorQ " + sMQMsg, close);
             }
-
             String sMQMsg2 = getTouch(ctx, bsMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
             if (sMQMsg2 != "") {
-                debug("MenthorQ " + sMQMsg2);
+                sMsg = "MenthorQ " + sMQMsg2;
                 ctx.signal(index, Signals.TOUCH, "MenthorQ " + sMQMsg2, close);
             }
         }
     }
 
     //endregion
+
+    private class Box extends Figure
+    {
+        @Override
+        public void draw(Graphics2D gc, DrawContext ctx)
+        {
+            try {
+                Font font = new Font("Dialog", Font.PLAIN, 14);
+                gc.setFont(font);
+                gc.setColor(WHITE);
+                gc.drawString(sMsg, 450, 40);
+            } catch (java.lang.Exception e){}
+        }
+    }
 
     //region TRADER SMARTS
 
@@ -180,41 +204,39 @@ public class LineBounces extends Study
         ts = ts.replaceAll("Short", "Short,");
         ts = ts.replaceAll("Long", "Long,");
         ts = ts.replaceAll("Sand", "Sand,");
-        //debug("Target Zones: " + ts);
+        debug("Target Zones: " + ts);
 
         // Values between the commas = 19825.75 Highest Odds Long
         String[] nums = ts.split(",");
-        for (int i = 0; i < nums.length; i++) {
-            //debug("nums " + i + " = " + nums[i]);
-            // Values between the spaces
-            String[] spaces = nums[i].trim().split(" ");
-            for (int ip = 0; ip < spaces.length; ip++) {
+        for (int ip = 0; ip < nums.length; ip++) {
+            debug("nums " + ip + " = " + nums[ip]);
 
-                if (spaces[ip].trim().contains("-")) {
-                    // Dash separated range = 20129.50-20111.25 Range Short
-                    String[] dash = spaces[ip].trim().replaceAll("\\s+", "").split("-");
-                    try {
-                        Double numone = Double.parseDouble(dash[0].trim());
-                        Double numtwo = Double.parseDouble(dash[1].trim());
-                        String[] descs = nums[ip].trim().split(" ");
-                        String desc = nums[ip].replaceAll(descs[0], "");
-                        tsRange.add(new RangeEntry(numone, numtwo, desc));
-                        //debug("Dash RangeEntry = " + numone + ", " + numtwo + ", " + desc);
-                        continue;
-                    } catch (NumberFormatException e) {}
-                }
-
-                try {
-                    // Simple strings = 19825.75 Highest Odds Long
-                    Double nummie = Double.parseDouble(spaces[ip].trim());
-                    String[] descs = nums[ip].trim().split(" ");
-                    String desc = nums[ip].replaceAll(descs[0], "");
-                    tsRange.add(new RangeEntry(nummie, nummie, desc));
-                    //debug("RangeEntry = " + nummie + " " + desc);
+            if (nums[ip].trim().contains("-")) {
+                // Dash separated range = 20129.50-20111.25 Range Short
+                Pattern pattern = Pattern.compile("^(\\d+\\.?\\d*)-(\\d+\\.?\\d*) (.+)$");
+                Matcher matcher = pattern.matcher(nums[ip].trim());
+                if (matcher.find()) {
+                    double numone = Double.parseDouble(matcher.group(1));
+                    double numtwo = Double.parseDouble(matcher.group(2));
+                    String desc = matcher.group(3);
+                    tsRange.add(new RangeEntry(numone, numtwo, desc));
+                    debug("Dash RangeEntry = " + numone + ", " + numtwo + ", " + desc);
                     continue;
-                } catch (NumberFormatException e) {}
-
+                }
             }
+            else
+            try {
+                // Simple strings = 19825.75 Highest Odds Long
+                Pattern pattern = Pattern.compile("^(\\d+\\.?\\d*) (.+)$");
+                Matcher matcher = pattern.matcher(nums[ip].trim());
+                if (matcher.find()) {
+                    double nummie = Double.parseDouble(matcher.group(1));
+                    String desc = matcher.group(2);
+                    tsRange.add(new RangeEntry(nummie, nummie, desc));
+                    debug("RangeEntry = " + nummie + " " + desc);
+                    continue;
+                }
+            } catch (NumberFormatException e) {}
         }
     }
 
@@ -232,12 +254,12 @@ public class LineBounces extends Study
         for (Map.Entry<Double, String> entry : map.entrySet()) {
             Double price = entry.getKey();
             if (high > price && low < price) {
-                ctx.signal(gIndex, Signals.TOUCH, "Price touched " + sType + entry.getValue(), close);
+                //ctx.signal(gIndex, Signals.TOUCH, "Price touched " + sType + entry.getValue(), close);
                 return " - Touched " + entry.getValue();
             }
             else if ((c0G && high > price && close < price) || (c0G && low < price && open > price) ||
                 (c0R && high > price && open < price) || (c0R && low < price && close > price)) {
-                ctx.signal(gIndex, Signals.WICK, "Wick off " + sType + entry.getValue(), close);
+                //ctx.signal(gIndex, Signals.WICK, "Wick off " + sType + entry.getValue(), close);
                 return " - WICK off " + entry.getValue();
             }
         }
@@ -254,7 +276,7 @@ public class LineBounces extends Study
                 Double nums = Double.parseDouble(parts[i].trim());
                 String txt = parts[i-1].trim();
                 xx.put(Double.parseDouble(parts[i].trim()), parts[i-1].trim());
-                debug("xx = " + nums + ", " + txt);
+                //debug("xx = " + nums + ", " + txt);
             } catch (NumberFormatException e) {
             }
         }
