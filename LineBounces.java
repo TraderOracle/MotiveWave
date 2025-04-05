@@ -29,7 +29,7 @@ public class LineBounces extends Study
 {
     //region VARIABLES
     enum Values { UP, DOWN, TREND }
-    enum Signals { WICK, TOUCH }
+    enum Signals { KP_WICK, KP_TOUCH, TS_WICK,TS_TOUCH, MQ_WICK, MQ_TOUCH, MAN_WICK, MAN_TOUCH }
 
     private static final Color RED = new Color(255, 0, 0);
     private static final Color GREEN = new Color(0, 255, 0);
@@ -93,7 +93,7 @@ public class LineBounces extends Study
                         if (tsi.text == "MTS")
                             sQ += " " + s.getClose();
                         debug("TraderSmarts Touched " + sQ);
-                        ctx.signal(index, Signals.TOUCH, "TraderSmarts Touched " + sQ, close);
+                        ctx.signal(index, Signals.TS_TOUCH, "TraderSmarts Touched " + sQ, close);
                         break;
                     }
                     else if ((c0G && hi > tsi.start && close < tsi.start) ||
@@ -101,7 +101,7 @@ public class LineBounces extends Study
                         (c0R && hi > tsi.start && open < tsi.start) ||
                         (c0R && lo < tsi.start && close > tsi.start)){
                         debug("TraderSmarts Wicking " + tsi.text);
-                        ctx.signal(index, Signals.WICK, "TraderSmarts Wick " + tsi.text, close);
+                        ctx.signal(index, Signals.TS_WICK, "TraderSmarts Wick " + tsi.text, close);
                         break;
                     }
                 }
@@ -109,12 +109,12 @@ public class LineBounces extends Study
                 // Range values
                 if (tsi.start > tsi.end && close > tsi.end && close < tsi.start) {
                     debug("TraderSmarts Inside  " + tsi.text);
-                    ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside " + tsi.text, close);
+                    ctx.signal(index, Signals.TS_TOUCH, "TraderSmarts Inside " + tsi.text, close);
                     break;
                 }
                 if (tsi.start < tsi.end && close < tsi.end && close > tsi.start) {
                     debug("TraderSmarts Inside  " + tsi.text);
-                    ctx.signal(index, Signals.TOUCH, "TraderSmarts Inside " + tsi.text, close);
+                    ctx.signal(index, Signals.TS_TOUCH, "TraderSmarts Inside " + tsi.text, close);
                     break;
                 }
             }
@@ -123,7 +123,7 @@ public class LineBounces extends Study
         if (bShowKillpips) {
             String sKPMsg = getTouch(ctx, kpMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
             if (sKPMsg != "")
-                ctx.signal(index, Signals.TOUCH, "Killips " + sKPMsg, close);
+                ctx.signal(index, Signals.KP_TOUCH, "Killips " + sKPMsg, close);
         }
 
         if (bShowMenthorQ) {
@@ -131,13 +131,13 @@ public class LineBounces extends Study
             String sMQMsg = getTouch(ctx, mqMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
             if (sMQMsg != "") {
                 debug("MenthorQ " + sMQMsg);
-                ctx.signal(index, Signals.TOUCH, "MenthorQ " + sMQMsg, close);
+                ctx.signal(index, Signals.MQ_TOUCH, "MenthorQ " + sMQMsg, close);
             }
 
             String sMQMsg2 = getTouch(ctx, bsMap, s.getHigh(), s.getLow(), s.getOpen(), s.getClose());
             if (sMQMsg2 != "") {
                 debug("MenthorQ " + sMQMsg2);
-                ctx.signal(index, Signals.TOUCH, "MenthorQ " + sMQMsg2, close);
+                ctx.signal(index, Signals.MQ_TOUCH, "MenthorQ " + sMQMsg2, close);
             }
         }
     }
@@ -219,7 +219,6 @@ public class LineBounces extends Study
 
     //endregion
 
-
     //region TOUCH LOGIC
 
     private String getTouch(DataContext ctx, Map<Double, String> map,
@@ -232,12 +231,12 @@ public class LineBounces extends Study
         for (Map.Entry<Double, String> entry : map.entrySet()) {
             Double price = entry.getKey();
             if (high > price && low < price) {
-                ctx.signal(gIndex, Signals.TOUCH, "Price touched " + sType + entry.getValue(), close);
+                ctx.signal(gIndex, Signals.KP_TOUCH, "Price touched " + sType + entry.getValue(), close);
                 return " - Touched " + entry.getValue();
             }
             else if ((c0G && high > price && close < price) || (c0G && low < price && open > price) ||
                 (c0R && high > price && open < price) || (c0R && low < price && close > price)) {
-                ctx.signal(gIndex, Signals.WICK, "Wick off " + sType + entry.getValue(), close);
+                ctx.signal(gIndex, Signals.KP_WICK, "Wick off " + sType + entry.getValue(), close);
                 return " - WICK off " + entry.getValue();
             }
         }
@@ -295,8 +294,14 @@ public class LineBounces extends Study
 
         RuntimeDescriptor desc = new RuntimeDescriptor();
         setRuntimeDescriptor(desc);
-        desc.declareSignal(Signals.WICK, "Price wicked a line");
-        desc.declareSignal(Signals.TOUCH, "Price closed within a line");
+        desc.declareSignal(Signals.KP_WICK, "Killpips Line Wick");
+        desc.declareSignal(Signals.KP_TOUCH, "Killpips Line Touch");
+        desc.declareSignal(Signals.TS_WICK, "TraderSmarts Line Wick");
+        desc.declareSignal(Signals.TS_TOUCH, "TraderSmarts Line Touch");
+        desc.declareSignal(Signals.MQ_WICK, "MenthorQ Line Wick");
+        desc.declareSignal(Signals.MQ_TOUCH, "MenthorQ Line Touch");
+        desc.declareSignal(Signals.MAN_WICK, "Mancini Line Wick");
+        desc.declareSignal(Signals.MAN_TOUCH, "Mancini Line Touch");
     }
 
     @Override
@@ -312,7 +317,8 @@ public class LineBounces extends Study
         var series = ctx.getDataSeries();
 
         int last = series.size() - 1;
-        if (series == null || index < 202 || !series.isBarComplete(index)) return;
+        if (series == null || index < 202 || !series.isBarComplete(index))
+            return;
 
         // CANDLE CALCULATIONS
         double close = series.getClose(index);
