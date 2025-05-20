@@ -53,7 +53,7 @@ public class TOMethod extends Study
     grpQ.addRow(new BooleanDescriptor("CANDLEBB", "Show Bollinger Push Off", true));
     grpQ.addRow(new BooleanDescriptor("STDBOINK", "Show Standard Boinks", true));
     grpQ.addRow(new BooleanDescriptor("DOUBLEWICKBOINK", "Show Double Wick Boinks", true));
-    grpQ.addRow(new BooleanDescriptor("3RUNUP", "Show Triple Candle Run-up", false));
+    //grpQ.addRow(new BooleanDescriptor("3RUNUP", "Show Triple Candle Run-up", false));
 
     var tab2 = sd.addTab("Bollinger Push Off");
     var grp2 = tab2.addGroup("Markers");
@@ -153,6 +153,17 @@ public class TOMethod extends Study
     // Within candle body
     boolean bInBODY = (close < myEMA && open > myEMA) || (close > myEMA && open < myEMA);
 
+    double upWick = c0R ? Math.abs(high-open) : Math.abs(high-close); 
+    double dnWick = c0R ? Math.abs(close-clow) : Math.abs(open-clow); 
+
+    boolean upWickBigger = upWick > body; 
+    boolean dnWickBigger = dnWick > body; 
+
+    if (dnWickBigger && clow < ema200 && close > ema200 && open > ema200)
+      return 1;
+    if (upWickBigger && high > ema200 && close > ema200 && open > ema200)
+      return -1;
+
     if (false) // (bStdBoink)
     {  // Green, prev RED.  In EMA, Prev candle higher
       if (c0G && c1R && bInHiLo && bGClose)
@@ -160,6 +171,7 @@ public class TOMethod extends Study
       if (c0R && c1G && bInHiLo && bRClose)
         return -1;
     }
+
     if (bStdBoink && !bEmaHug)
     {  // Green, prev RED, prevprev RED. In EMA, Prev candle higher
       if (popen > myEMA && bGClose && c0G && c1R && c2R && bInHiLo && bPrevHi)
@@ -167,6 +179,7 @@ public class TOMethod extends Study
       if (popen < myEMA && bRClose && c0R && c1G && c2R && bInHiLo && bPrevLo)
         return -1;
     }
+
     if (bDoubleWick && !bEmaHug)
     {   //  green  prev red  WICK  PWICK
       if (c0G && c1R && open > myEMA && clow < myEMA && pphigh > phigh)
@@ -175,6 +188,7 @@ public class TOMethod extends Study
         return -1;
       //(c0G && bGDoji && clow < myEMA && close > myEMA && phigh < myEMA)
     }
+
     if (b3CandleRunup)
     {
       if (c0G && c1G && c2G && open <= pclose && popen <= ppclose && bInHiLo)
@@ -277,7 +291,7 @@ public class TOMethod extends Study
     //endregion
 
     //region BOLLINGER PUSH OFF
-    if (bBBPushOff && pplow <= pplowerBB && plow <= plowerBB && c0G && c1G && c2R)
+    if (bBBPushOff && plow <= plowerBB && clow <= lowerBB && c0G && c1R)
     {
       var marker = getSettings().getMarker("UPCANDLEBBMarker");
       Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 1);
@@ -286,7 +300,7 @@ public class TOMethod extends Study
       return;
     }
 
-    if (bBBPushOff && pphigh >= ppupperBB && phigh >= pupperBB && c0R && c1R && c2G)
+    if (bBBPushOff && phigh >= pupperBB && high >= upperBB && c0R && c1G)
     {
       var marker = getSettings().getMarker("DOWNCANDLEBBMarker");
       Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 1);
@@ -297,7 +311,7 @@ public class TOMethod extends Study
     //endregion
 
     //region ENGULFING CANDLE
-    if (false && (clow < lowerBB || plow < lowerBB) && body > pbody && c1R && bShowEngBB && c0G)
+    if ((clow < lowerBB || plow < lowerBB) && body > pbody && c1R && bShowEngBB && c0G)
     {
       var marker = getSettings().getMarker("UPEngBBMarker");
       Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 1);
@@ -308,8 +322,8 @@ public class TOMethod extends Study
       return;
     }
 
-    if (false && (high > upperBB || phigh > upperBB) && body > pbody && bShowEngBB && c1G && c0R)
-    {
+    if ((high > upperBB || phigh > upperBB) && body > pbody && bShowEngBB && c1G && c0R)
+     { 
       var marker = getSettings().getMarker("DOWNEngBBMarker");
       int iStart = series.getStartIndex();
       int iEnd = series.getEndIndex();
