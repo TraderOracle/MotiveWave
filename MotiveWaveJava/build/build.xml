@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+  This is a sample build/deployment script.
+  By default, this script simply deploys the classes and properties files to
+  the 'MotiveWave Extensions\dev' directory (under user.home)
+  
+  This script also has the ability to create a jar file for the studies/strategies
+  in this project.  The jar file makes it easier to distribute your studies/strategies
+-->
+<project default="deploy">
+	<!-- user.home is C:\Documents and Settings\<user name> or C:\Users\<user name> (Windows) or /Users/<user name> (Mac OSX) -->
+  <property name="ext.dir" value="${user.home}/MotiveWave Extensions"/>
+  <property name="dev.dir" value="${ext.dir}/dev"/>
+  <property name="src.dir" value="../src/"/>
+  <property name="bin.dir" value="../bin/"/>
+  <property name="lib.dir" value="../lib/"/>
+  <!-- Name of the jar file (created in the 'jar' target) -->
+  <property name="jar.name" value="TraderOracle"/>
+
+  <!-- This alternative deployment task, copies all class and properties files 
+       to the extensions directory (instead of creating the jar file). -->
+  <target name="deploy" depends="compile">
+    <!-- Copy all .class and .properties files. These files are placed in a subdirectory called 'dev'
+         in the extensions directory.  This directory is first deleted in case you have moved or renamed
+         any of the files. -->
+    <delete dir="${dev.dir}"/>
+    <mkdir dir="${dev.dir}"/>
+    <copy todir="${dev.dir}" overwrite="true">
+      <fileset dir="classes" includes="**/*.class"/>
+      <fileset dir="${src.dir}" includes="**/*.properties"/>
+    </copy>
+    <!-- This tells MotiveWave to check for any modified files and load them. -->
+    <touch file="${ext.dir}/.last_updated"/>
+  </target>
+
+  <!-- This class path includes all of the jars in the lib directory. -->
+  <path id="classpath">
+    <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    <pathelement path="classes"/>
+  </path>
+
+  <!-- Compiles the source putting the generated class files in the 'classes' subdirectory. -->
+  <target name="compile" depends="clean">
+    <mkdir dir="classes"/>
+    <javac includeantruntime="false" srcdir="${src.dir}" destdir="classes" debug="true" debuglevel="lines,source">
+      <classpath refid="classpath"/>
+    </javac>
+    <delete dir="${dev.dir}"/>
+    <mkdir dir="${dev.dir}"/>
+    <copy todir="${dev.dir}" overwrite="true">
+      <fileset dir="classes" includes="**/*.class"/>
+      <fileset dir="${src.dir}" includes="**/*.properties"/>
+    </copy>
+    <touch file="${ext.dir}/.last_updated"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="classes"/>
+    <delete dir="jar"/>
+  </target>
+
+  <target name="deploy_jar" depends="jar">
+    <mkdir dir="${ext.dir}/lib"/>
+    <copy file="jar/${jar.name}.jar" todir="${ext.dir}/lib" overwrite="true"/>
+    <touch file="${ext.dir}/.last_updated"/>
+  </target>
+
+  <target name="jar" depends="compile">
+    <delete dir="jar"/>
+    <jar destfile="jar/${jar.name}.jar" manifest="Manifest.MF" level="9">
+      <fileset dir="classes" includes="**/*.class"/>
+      <fileset dir="${src.dir}" includes="**/*.properties"/>
+    </jar>
+  </target>
+
+</project>
