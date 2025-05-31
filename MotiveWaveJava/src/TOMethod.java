@@ -273,7 +273,7 @@ public class TOMethod extends Study
       if (CheckForBoink(series, index, input) == 1) // GREEN
       {
         var marker = getSettings().getMarker("UPBOINKMarker");
-        Coordinate coords = new Coordinate(series.getStartTime(index), (double) clow-1);
+        Coordinate coords = new Coordinate(series.getStartTime(index), (double) clow);
         this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "BOINK"));
         ctx.signal(index, Signals.BOINK, "BOINK", close);
         return;
@@ -281,7 +281,7 @@ public class TOMethod extends Study
       if (CheckForBoink(series, index, input) == -1) // RED
       {
         var marker = getSettings().getMarker("DOWNBOINKMarker");
-        Coordinate coords = new Coordinate(series.getStartTime(index), (double) high+1);
+        Coordinate coords = new Coordinate(series.getStartTime(index), (double) high);
         this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "BOINK"));
         ctx.signal(index, Signals.BOINK, "BOINK", close);
         return;
@@ -294,7 +294,7 @@ public class TOMethod extends Study
     if (bBBPushOff && plow <= plowerBB && clow <= lowerBB && c0G && c1R)
     {
       var marker = getSettings().getMarker("UPCANDLEBBMarker");
-      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 1);
+      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index)  );
       this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "Bollinger Push Off"));
       ctx.signal(index, Signals.CANDLEOVERCANDLE, "Bollinger Push Off", close);
       return;
@@ -303,7 +303,7 @@ public class TOMethod extends Study
     if (bBBPushOff && phigh >= pupperBB && high >= upperBB && c0R && c1G)
     {
       var marker = getSettings().getMarker("DOWNCANDLEBBMarker");
-      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 1);
+      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index)  );
       this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "Bollinger Push Off"));
       ctx.signal(index, Signals.CANDLEOVERCANDLE, "Bollinger Push Off", close);
       return;
@@ -314,7 +314,7 @@ public class TOMethod extends Study
     if ((clow < lowerBB || plow < lowerBB) && body > pbody && c1R && bShowEngBB && c0G)
     {
       var marker = getSettings().getMarker("UPEngBBMarker");
-      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index) - 1);
+      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getLow(index));
       this.addFigure(new Marker(coords, Enums.Position.BOTTOM, marker, "ENGULFING CANDLE"));
       ctx.signal(index, Signals.ENG_BB, "ENG_BB", close);
       if (bColorCandle)
@@ -327,7 +327,7 @@ public class TOMethod extends Study
       var marker = getSettings().getMarker("DOWNEngBBMarker");
       int iStart = series.getStartIndex();
       int iEnd = series.getEndIndex();
-      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index) + 1);
+      Coordinate coords = new Coordinate(series.getStartTime(index), (double) series.getHigh(index)  );
       Coordinate coordsEnd = new Coordinate(series.getStartTime(index-100), (double) series.getHigh(index) + 2.2);
       this.addFigure(new Marker(coords, Enums.Position.TOP, marker, "ENGULFING CANDLE"));
 
